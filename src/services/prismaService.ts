@@ -1,9 +1,6 @@
 import prisma from './prisma'
 import type { User, Announcement, Appointment } from '../types'
-
-// ฟังก์ชันสำหรับผู้ใช้งาน
 export const userService = {
-  // ดึงข้อมูลผู้ใช้ทั้งหมด
   async getAllUsers(): Promise<User[]> {
     const users = await prisma.user.findMany()
     return users.map(user => ({
@@ -22,7 +19,6 @@ export const userService = {
     }))
   },
 
-  // ดึงข้อมูลผู้ใช้ตาม ID
   async getUserById(id: string): Promise<User | null> {
     const user = await prisma.user.findUnique({
       where: { id }
@@ -44,7 +40,6 @@ export const userService = {
     }
   },
 
-  // ดึงข้อมูลผู้ใช้ตามอีเมล
   async getUserByEmail(email: string): Promise<User | null> {
     const user = await prisma.user.findUnique({
       where: { email }
@@ -66,7 +61,6 @@ export const userService = {
     }
   },
 
-  // ดึงข้อมูลผู้ใช้ตามรหัสนักศึกษา
   async getUserByStudentId(studentId: string): Promise<User | null> {
     const user = await prisma.user.findFirst({
       where: { studentId }
@@ -88,7 +82,6 @@ export const userService = {
     }
   },
 
-  // สร้างผู้ใช้ใหม่
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
     const user = await prisma.user.create({
       data: {
@@ -99,7 +92,7 @@ export const userService = {
         lastName: userData.lastName,
         profileImage: userData.profileImage || null,
         department: userData.department || null,
-        email: userData.email || null,
+        email: userData.email || '',
         phone: userData.phone || null,
         academicPosition: userData.academicPosition || null,
         studentId: userData.studentId || null,
@@ -126,11 +119,12 @@ export const userService = {
     }
   },
 
-  // อัปเดตข้อมูลผู้ใช้
   async updateUser(id: string, userData: Partial<User>): Promise<User> {
+    const prismaUserData: any = { ...userData };
+    
     const user = await prisma.user.update({
       where: { id },
-      data: userData
+      data: prismaUserData
     })
     
     return {
@@ -149,7 +143,6 @@ export const userService = {
     }
   },
 
-  // ลบผู้ใช้
   async deleteUser(id: string): Promise<User> {
     const user = await prisma.user.delete({
       where: { id }
@@ -171,7 +164,6 @@ export const userService = {
     }
   },
 
-  // ดึงข้อมูลนักศึกษาของอาจารย์ที่ปรึกษา
   async getStudentsByAdvisorId(advisorId: string): Promise<User[]> {
     const users = await prisma.user.findMany({
       where: {
@@ -197,9 +189,7 @@ export const userService = {
   }
 }
 
-// ฟังก์ชันสำหรับประกาศ
 export const announcementService = {
-  // ดึงประกาศทั้งหมด
   async getAllAnnouncements(): Promise<Announcement[]> {
     const announcements = await prisma.announcement.findMany()
     return announcements.map(announcement => ({
@@ -210,7 +200,6 @@ export const announcementService = {
     }))
   },
 
-  // ดึงประกาศตาม ID
   async getAnnouncementById(id: string): Promise<Announcement | null> {
     const announcement = await prisma.announcement.findUnique({
       where: { id }
@@ -226,7 +215,6 @@ export const announcementService = {
     }
   },
 
-  // ดึงประกาศตาม advisorId
   async getAnnouncementsByAdvisorId(advisorId: string): Promise<Announcement[]> {
     const announcements = await prisma.announcement.findMany({
       where: { advisorId }
@@ -240,7 +228,6 @@ export const announcementService = {
     }))
   },
 
-  // สร้างประกาศใหม่
   async createAnnouncement(announcementData: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>): Promise<Announcement> {
     const announcement = await prisma.announcement.create({
       data: {
@@ -260,7 +247,6 @@ export const announcementService = {
     }
   },
 
-  // อัปเดตประกาศ
   async updateAnnouncement(id: string, announcementData: Partial<Announcement>): Promise<Announcement> {
     const announcement = await prisma.announcement.update({
       where: { id },
@@ -275,7 +261,6 @@ export const announcementService = {
     }
   },
 
-  // ลบประกาศ
   async deleteAnnouncement(id: string): Promise<Announcement> {
     const announcement = await prisma.announcement.delete({
       where: { id }
@@ -290,9 +275,7 @@ export const announcementService = {
   }
 }
 
-// ฟังก์ชันสำหรับการนัดหมาย
 export const appointmentService = {
-  // ดึงการนัดหมายทั้งหมด
   async getAllAppointments(): Promise<Appointment[]> {
     const appointments = await prisma.appointment.findMany()
     return appointments.map(appointment => ({
@@ -314,7 +297,6 @@ export const appointmentService = {
     }))
   },
 
-  // ดึงการนัดหมายตาม ID
   async getAppointmentById(id: string): Promise<Appointment | null> {
     const appointment = await prisma.appointment.findUnique({
       where: { id }
@@ -341,7 +323,6 @@ export const appointmentService = {
     }
   },
 
-  // ดึงการนัดหมายตาม advisorId
   async getAppointmentsByAdvisorId(advisorId: string): Promise<Appointment[]> {
     const appointments = await prisma.appointment.findMany({
       where: { advisorId }
@@ -366,7 +347,6 @@ export const appointmentService = {
     }))
   },
 
-  // ดึงการนัดหมายตาม studentId
   async getAppointmentsByStudentId(studentId: string): Promise<Appointment[]> {
     const appointments = await prisma.appointment.findMany({
       where: { studentId }
@@ -391,7 +371,6 @@ export const appointmentService = {
     }))
   },
 
-  // สร้างการนัดหมายใหม่
   async createAppointment(appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
     const appointment = await prisma.appointment.create({
       data: {
@@ -430,9 +409,7 @@ export const appointmentService = {
     }
   },
 
-  // อัปเดตการนัดหมาย
   async updateAppointment(id: string, appointmentData: Partial<Appointment>): Promise<Appointment> {
-    // แปลงข้อมูลให้ตรงกับ schema ของ Prisma
     const prismaAppointmentData: any = {}
     
     if (appointmentData.advisorId) prismaAppointmentData.advisorId = appointmentData.advisorId

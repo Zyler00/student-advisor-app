@@ -291,7 +291,7 @@ const loadAppointments = async () => {
     const userData = JSON.parse(storedUser)
     console.log('User data from localStorage:', userData)
 
-    const { data, error: fetchError } = await supabaseAdmin
+    const { error: fetchError } = await supabaseAdmin
       .from('Appointment')
       .select(`
         id,
@@ -317,8 +317,8 @@ const loadAppointments = async () => {
       return
     }
     
-    console.log('Appointment data fetched:', data)
-    appointments.value = data || []
+    console.log('Appointment data fetched:')
+    appointments.value = []
 
     await loadStudentData()
   } catch (err) {
@@ -420,7 +420,7 @@ const updateAppointment = async () => {
       note: updateData.value.note
     }
 
-    const { data, error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('Appointment')
       .update({
         status: appointmentData.status,

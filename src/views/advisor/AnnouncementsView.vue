@@ -432,8 +432,8 @@ const resetForm = () => {
   selectedAnnouncement.value = null
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
+const formatDate = (dateInput: Date | string) => {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
   return new Intl.DateTimeFormat('th-TH', {
     year: 'numeric',
     month: 'long',

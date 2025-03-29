@@ -29,7 +29,7 @@
                 <span class="absolute inset-0" aria-hidden="true"></span>
                 {{ announcement.title }}
               </h3>
-              <p class="mt-1 text-sm text-gray-600 line-clamp-2">{{ announcement.content }}</p>
+              <p class="mt-1 text-sm text-gray-600 line-clamp-2">{{ announcement.description }}</p>
               <div class="mt-2 flex items-center space-x-4">
                 <div class="flex items-center text-sm text-gray-500">
                   <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -248,11 +248,9 @@ const handleAddAnnouncement = async () => {
 
     const announcementData = {
       title: formData.value.title,
-      content: formData.value.content,
+      description: formData.value.content,
       fileUrl: fileUrl,
-      fileName: formData.value.fileName,
-      targetGroup: formData.value.targetGroup,
-      targetStudents: formData.value.targetGroup === 'custom' ? selectedStudents.value : []
+      fileName: formData.value.fileName
     }
     
     if (isEditMode.value && editId.value) {
@@ -278,18 +276,14 @@ const editAnnouncement = (announcement: Announcement) => {
 
   formData.value = {
     title: announcement.title,
-    content: announcement.content,
+    content: announcement.description || '',
     file: null,
     fileName: announcement.fileName || '',
     fileUrl: announcement.fileUrl || '',
-    targetGroup: announcement.targetGroup || 'all'
+    targetGroup: 'all'
   }
 
-  if (announcement.targetGroup === 'custom' && announcement.targetStudents) {
-    selectedStudents.value = announcement.targetStudents
-  } else {
-    selectedStudents.value = []
-  }
+  selectedStudents.value = []
   
   showAddModal.value = true
 }

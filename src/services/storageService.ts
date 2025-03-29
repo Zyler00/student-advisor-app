@@ -1,8 +1,6 @@
 import { supabaseAdmin } from './supabase'
 
-// บริการจัดการไฟล์ใน Supabase Storage
 export const storageService = {
-  // อัปโหลดรูปภาพโปรไฟล์
   async uploadProfileImage(file: File, userId: string): Promise<string> {
     try {
       const fileExt = file.name.split('.').pop()
@@ -28,7 +26,6 @@ export const storageService = {
     }
   },
 
-  // ลบรูปภาพโปรไฟล์
   async deleteProfileImage(userId: string): Promise<void> {
     try {
       const { data, error } = await supabaseAdmin.storage
@@ -54,7 +51,6 @@ export const storageService = {
     }
   },
 
-  // อัปโหลดไฟล์เอกสาร
   async uploadDocument(file: File, folder: string): Promise<string> {
     try {
       const fileExt = file.name.split('.').pop()
@@ -78,7 +74,6 @@ export const storageService = {
     }
   },
 
-  // ลบไฟล์เอกสาร
   async deleteDocument(filePath: string): Promise<void> {
     try {
       const { error } = await supabaseAdmin.storage

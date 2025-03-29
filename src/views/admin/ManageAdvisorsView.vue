@@ -333,7 +333,7 @@ const handleAddAdvisor = async () => {
         academicPosition: formData.value.academicPosition,
         firstName: formData.value.firstName,
         lastName: formData.value.lastName,
-        department: formData.value.department,
+        department: formData.value.department || '',
         email: formData.value.email,
         phone: formData.value.phone,
         username: formData.value.username
@@ -394,7 +394,7 @@ const editAdvisor = (advisor: User) => {
     academicPosition: advisor.academicPosition || '',
     firstName: advisor.firstName,
     lastName: advisor.lastName,
-    department: advisor.department,
+    department: advisor.department || '',
     email: advisor.email || '',
     phone: advisor.phone || '',
     username: advisor.username,

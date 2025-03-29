@@ -395,7 +395,7 @@ const getStudentImage = (studentId: string) => {
   return student.profileImage
 }
 
-const formatDate = (date?: Date) => {
+const formatDate = (date?: string | Date) => {
   if (!date) return ''
   return new Date(date).toLocaleDateString('th-TH', { 
     year: 'numeric', 
@@ -491,7 +491,8 @@ const viewAppointmentDetails = (appointment: Appointment) => {
   showDetailsModal.value = true
 }
 
-const openUrl = (url: string) => {
-  window.open(url, '_blank')
-}
+// Keeping this function as it might be needed later for file downloads
+// const openUrl = (url: string) => {
+//   window.open(url, '_blank')
+// }
 </script>

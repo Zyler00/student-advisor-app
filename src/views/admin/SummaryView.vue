@@ -370,9 +370,9 @@ const calculateAppointmentSummary = () => {
   console.log('สรุปการนัดหมายที่คำนวณได้:', appointmentSummary.value)
 }
 
-const getStudentCount = (advisorId: string) => {
-  return studentCountMap.value.get(advisorId) || 0
-}
+// const getStudentCount = (advisorId: string) => {
+//   return studentCountMap.value.get(advisorId) || 0
+// }
 
 const getAdvisorName = (advisorId: string) => {
   const advisor = advisorMap.value.get(advisorId)

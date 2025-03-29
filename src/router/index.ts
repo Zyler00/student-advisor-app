@@ -115,8 +115,7 @@ const router = createRouter({
   ]
 })
 
-
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _, next) => {
   const isAuthenticated = localStorage.getItem('user') !== null
   const userString = localStorage.getItem('user')
   const user = userString ? JSON.parse(userString) : null

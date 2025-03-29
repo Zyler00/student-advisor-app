@@ -256,6 +256,11 @@ const fetchUserData = async () => {
     loading.value = true
     
     const userData = await authStore.fetchUserProfile()
+    if (!userData) {
+      error.value = 'ไม่พบข้อมูลผู้ใช้'
+      return
+    }
+    
     user.value = userData
  
     if (userData.advisorId) {

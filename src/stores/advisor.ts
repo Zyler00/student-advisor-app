@@ -330,6 +330,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         }
       }
       
+      const id = generateUUID();
       const newAnnouncement = {
         id,
         ...announcementData,
