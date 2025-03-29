@@ -1,4 +1,16 @@
+// build-vercel.mjs
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// สร้างโฟลเดอร์ dist ถ้ายังไม่มี
+if (!fs.existsSync('dist')) {
+  fs.mkdirSync('dist');
+}
+
+// สร้างไฟล์ index.html ใน dist
+const indexHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,3 +61,8 @@
   </div>
 </body>
 </html>
+`;
+
+fs.writeFileSync(path.join('dist', 'index.html'), indexHtml);
+
+console.log('Build completed successfully!');
