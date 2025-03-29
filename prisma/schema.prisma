@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+  seed     = "ts-node prisma/seed.ts"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String         @id @default(uuid())
+  username         String         @unique
+  email            String         @unique
+  password         String
+  role             String
+  firstName        String
+  lastName         String
+  title            String?
+  position         String?
+  academicPosition String?
+  office           String?
+  phone            String?
+  studentId        String?
+  department       String?
+  profileImage     String?
+  advisorId        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  announcements    Announcement[]
+  appointments     Appointment[]
+  advisor          User?          @relation("AdvisorToStudent", fields: [advisorId], references: [id])
+  studentsAdvised  User[]         @relation("AdvisorToStudent")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  advisorId   String
+  title       String
+  description String?
+  fileUrl     String?
+  fileName    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  advisor     User     @relation(fields: [advisorId], references: [id])
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  advisorId   String
+  studentId   String
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  status      String
+  location    String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  advisor     User     @relation(fields: [advisorId], references: [id])
+}
+
+model Comment {
+  id               String   @id @default(uuid())
+  advisorId        String
+  studentId        String
+  content          String
+  isAdvisorComment Boolean
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
