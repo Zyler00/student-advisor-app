@@ -27,13 +27,13 @@
           <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
             <div>
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                {{ appointment.topic }}
+                {{ appointment.title }}
               </h3>
               <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                วันที่ขอนัดหมาย: {{ formatDate(appointment.requestDate) }}
+                วันที่ขอนัดหมาย: {{ formatDate(appointment.startTime) }}
               </p>
-              <p v-if="appointment.appointmentDate" class="mt-1 max-w-2xl text-sm text-gray-500">
-                วันที่นัดหมาย: {{ formatDateTime(appointment.appointmentDate) }}
+              <p v-if="appointment.endTime" class="mt-1 max-w-2xl text-sm text-gray-500">
+                วันที่นัดหมาย: {{ formatDateTime(appointment.endTime) }}
               </p>
               <p v-if="appointment.preferredDate" class="mt-1 max-w-2xl text-sm text-gray-500">
                 วันที่นักศึกษาต้องการ: {{ formatDate(appointment.preferredDate) }}
@@ -127,7 +127,7 @@
                       <input 
                         type="text" 
                         id="title" 
-                        v-model="formData.topic" 
+                        v-model="formData.title" 
                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         required
                       />
@@ -147,7 +147,7 @@
                       <input 
                         type="date" 
                         id="date" 
-                        v-model="formData.appointmentDate" 
+                        v-model="formData.startTime" 
                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         required
                       />
@@ -224,7 +224,7 @@
                       <input 
                         type="text" 
                         id="edit-title" 
-                        v-model="formData.topic" 
+                        v-model="formData.title" 
                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         required
                       />
@@ -244,7 +244,7 @@
                       <input 
                         type="date" 
                         id="edit-date" 
-                        v-model="formData.appointmentDate" 
+                        v-model="formData.startTime" 
                         class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                         required
                       />
@@ -315,6 +315,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAdvisorStore } from '../../stores/advisor'
+import { supabaseAdmin } from '../../services/supabase'
 import type { Appointment, User } from '../../types'
 
 const advisorStore = useAdvisorStore()
@@ -333,12 +334,13 @@ const showEditModal = ref(false)
 const formData = ref({
   id: '',
   studentId: '',
-  topic: '',
+  title: '',
   description: '',
-  appointmentDate: '',
+  startTime: '',
+  endTime: '',
+  status: 'pending' as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
   location: '',
-  note: '',
-  status: 'pending' as 'pending' | 'scheduled' | 'confirmed' | 'cancelled'
+  note: ''
 })
 
 // Selected appointment for edit
@@ -359,21 +361,51 @@ const loadAppointments = async () => {
     error.value = null
     
     // ตรวจสอบว่ามีผู้ใช้ที่ล็อกอินอยู่หรือไม่
-    const currentUser = authStore.user
-    if (!currentUser) {
+    const storedUser = localStorage.getItem('user')
+    if (!storedUser) {
       error.value = 'กรุณาเข้าสู่ระบบก่อนดูข้อมูลการนัดหมาย'
+      loading.value = false
       return
     }
     
-    // ดึงข้อมูลการนัดหมายจากสโตร์
-    await advisorStore.fetchAppointments()
-    appointments.value = advisorStore.appointments
+    const userData = JSON.parse(storedUser)
+    console.log('User data from localStorage:', userData)
+    
+    // ดึงข้อมูลการนัดหมายโดยตรงจาก Supabase
+    const { data, error: fetchError } = await supabaseAdmin
+      .from('Appointment')
+      .select(`
+        id,
+        advisorId,
+        studentId,
+        title,
+        description,
+        startTime,
+        endTime,
+        status,
+        location,
+        note,
+        createdAt,
+        updatedAt
+      `)
+      .eq('advisorId', userData.id)
+      .order('createdAt', { ascending: false })
+    
+    if (fetchError) {
+      console.error('Error fetching appointments:', fetchError)
+      error.value = `ไม่สามารถดึงข้อมูลการนัดหมายได้: ${fetchError.message}`
+      loading.value = false
+      return
+    }
+    
+    console.log('Appointment data fetched:', data)
+    appointments.value = data || []
     
     // โหลดข้อมูลนักศึกษาสำหรับแต่ละการนัดหมาย
     await loadStudentData()
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error loading appointments:', err)
-    error.value = err.message
+    error.value = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลการนัดหมาย'
   } finally {
     loading.value = false
   }
@@ -383,19 +415,37 @@ const loadAppointments = async () => {
 const loadStudentData = async () => {
   try {
     // สร้างเซตของ studentId ที่ไม่ซ้ำกัน
-    const studentIds = new Set(appointments.value.map(appointment => appointment.studentId))
+    const uniqueStudentIds = new Set<string>()
     
-    // โหลดข้อมูลนักศึกษาสำหรับแต่ละ ID
-    for (const studentId of studentIds) {
+    appointments.value.forEach(appointment => {
+      if (appointment.studentId) {
+        uniqueStudentIds.add(appointment.studentId)
+      }
+    })
+    
+    // ดึงข้อมูลนักศึกษาแยกต่างหาก
+    for (const studentId of uniqueStudentIds) {
       try {
-        const studentInfo = await advisorStore.fetchStudentById(studentId)
-        if (studentInfo) {
-          studentData.value[studentId] = studentInfo
+        const { data, error } = await supabaseAdmin
+          .from('User')
+          .select('id, firstName, lastName, profileImage, department')
+          .eq('id', studentId)
+          .single()
+        
+        if (error) {
+          console.error(`Error fetching student data for ID ${studentId}:`, error)
+          continue
         }
-      } catch (studentErr) {
-        console.error(`Error loading student data for ID ${studentId}:`, studentErr)
+        
+        if (data) {
+          studentData.value[studentId] = data
+        }
+      } catch (err) {
+        console.error(`Exception when fetching student data for ID ${studentId}:`, err)
       }
     }
+    
+    console.log('Updated student data:', studentData.value)
   } catch (err) {
     console.error('Error in loadStudentData:', err)
   }
@@ -417,12 +467,13 @@ const createAppointment = async () => {
     // ส่งข้อมูลไปยัง store
     const appointmentData = {
       studentId: formData.value.studentId,
-      topic: formData.value.topic,
+      title: formData.value.title,
       description: formData.value.description,
-      appointmentDate: formData.value.appointmentDate ? new Date(formData.value.appointmentDate) : null,
+      startTime: formData.value.startTime ? new Date(formData.value.startTime) : null,
+      endTime: formData.value.endTime ? new Date(formData.value.endTime) : null,
+      status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
       location: formData.value.location,
-      note: formData.value.note,
-      status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled'
+      note: formData.value.note
     }
     
     await advisorStore.requestAppointment(appointmentData)
@@ -447,12 +498,13 @@ const editAppointment = (appointment: Appointment) => {
   formData.value = {
     id: appointment.id,
     studentId: appointment.studentId,
-    topic: appointment.topic || '',
+    title: appointment.title || '',
     description: appointment.description || '',
-    appointmentDate: appointment.appointmentDate ? new Date(appointment.appointmentDate).toISOString().split('T')[0] : '',
+    startTime: appointment.startTime ? new Date(appointment.startTime).toISOString().split('T')[0] : '',
+    endTime: appointment.endTime ? new Date(appointment.endTime).toISOString().split('T')[0] : '',
+    status: appointment.status,
     location: appointment.location || '',
-    note: appointment.note || '',
-    status: appointment.status
+    note: appointment.note || ''
   }
   
   showEditModal.value = true
@@ -467,12 +519,13 @@ const updateAppointment = async () => {
     // ส่งข้อมูลไปยัง store
     const appointmentData = {
       id: formData.value.id,
-      topic: formData.value.topic,
+      title: formData.value.title,
       description: formData.value.description,
-      appointmentDate: formData.value.appointmentDate ? new Date(formData.value.appointmentDate) : null,
+      startTime: formData.value.startTime ? new Date(formData.value.startTime) : null,
+      endTime: formData.value.endTime ? new Date(formData.value.endTime) : null,
+      status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
       location: formData.value.location,
-      note: formData.value.note,
-      status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled'
+      note: formData.value.note
     }
     
     // ใช้ requestAppointment เพื่ออัปเดตข้อมูล
@@ -496,12 +549,13 @@ const resetForm = () => {
   formData.value = {
     id: '',
     studentId: '',
-    topic: '',
+    title: '',
     description: '',
-    appointmentDate: '',
+    startTime: '',
+    endTime: '',
+    status: 'pending' as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
     location: '',
-    note: '',
-    status: 'pending' as 'pending' | 'scheduled' | 'confirmed' | 'cancelled'
+    note: ''
   }
   selectedAppointment.value = null
 }

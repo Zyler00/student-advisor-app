@@ -558,216 +558,21 @@ export const useAdvisorStore = defineStore('advisor', () => {
     try {
       console.log('Starting appointment request with data:', appointmentData)
       
-      // ตรวจสอบสถานะการเข้าสู่ระบบ
-      const { data: sessionData, error: sessionError } = await checkSession()
-      
-      if (sessionError) {
-        console.error('Session check error:', sessionError)
-        throw new Error('ไม่สามารถตรวจสอบสถานะการเข้าสู่ระบบได้')
+      // ตรวจสอบข้อมูลที่จำเป็น
+      if (!appointmentData.topic) {
+        throw new Error('กรุณาระบุหัวข้อการนัดหมาย')
       }
       
-      if (!sessionData.session) {
-        console.error('No active session found in Supabase')
-        
-        // ตรวจสอบว่ามีข้อมูลผู้ใช้ใน localStorage หรือไม่
-        const storedUser = localStorage.getItem('user')
-        if (!storedUser) {
-          console.error('No user data found in localStorage')
-          throw new Error('กรุณาเข้าสู่ระบบก่อนขอนัดหมาย')
-        }
-        
-        // พยายาม login ด้วยข้อมูลจาก localStorage
-        try {
-          const userData = JSON.parse(storedUser)
-          console.log('Attempting to login with stored credentials:', userData.username)
-          
-          // ถ้ามี username และ password ให้พยายาม login
-          if (userData.username && userData.password) {
-            console.log('Found username in localStorage:', userData.username)
-            
-            // ดึงข้อมูลผู้ใช้จากฐานข้อมูลด้วย username
-            const { data: dbUserData, error: dbUserError } = await supabaseAdmin
-              .from('User')
-              .select('*')
-              .ilike('username', userData.username)
-              .single()
-            
-            if (dbUserError) {
-              console.error('Error getting user data from DB by username:', dbUserError)
-            }
-            
-            if (dbUserData && dbUserData.email) {
-              console.log('Found email for username, attempting to sign in with email:', dbUserData.email)
-              
-              // พยายาม sign in ด้วย email และ password
-              const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email: dbUserData.email,
-                password: userData.password
-              })
-              
-              if (signInError) {
-                console.warn('Could not sign in with email and stored password:', signInError)
-              } else {
-                console.log('Successfully signed in with stored credentials')
-              }
-            }
-          }
-        } catch (parseErr) {
-          console.error('Error parsing user data from localStorage:', parseErr)
-        }
-        
-        // ตรวจสอบสถานะการเข้าสู่ระบบอีกครั้ง
-        const { data: recheckData, error: recheckError } = await supabase.auth.getSession()
-        
-        if (recheckError || !recheckData.session) {
-          console.error('Still no active session after login attempt')
-          throw new Error('กรุณาเข้าสู่ระบบก่อนขอนัดหมาย')
-        }
+      if (!appointmentData.advisorId) {
+        throw new Error('ไม่พบข้อมูลอาจารย์ที่ปรึกษา')
       }
       
-      console.log('Session check passed, proceeding with appointment request')
-      
-      // ดึงข้อมูลผู้ใช้จาก localStorage
-      const storedUser = localStorage.getItem('user')
-      if (!storedUser) {
-        console.error('No user data found in localStorage')
-        throw new Error('ไม่พบข้อมูลผู้ใช้')
+      if (!appointmentData.studentId) {
+        throw new Error('ไม่พบข้อมูลนักศึกษา')
       }
-      
-      const userData = JSON.parse(storedUser)
-      console.log('User data from localStorage:', userData)
-      
-      // ค้นหาข้อมูลผู้ใช้จากฐานข้อมูล
-      let studentData = null
-      
-      // วิธีที่ 1: ค้นหาจาก username
-      console.log('Searching for user by username:', userData.username)
-      const { data: usernameData, error: usernameError } = await supabaseAdmin
-        .from('User')
-        .select('*')
-        .ilike('username', userData.username)
-      
-      if (usernameError) {
-        console.error('Error searching by username:', usernameError)
-      } else {
-        console.log('Username search result:', usernameData)
-        if (usernameData && usernameData.length > 0) {
-          studentData = usernameData[0]
-          console.log('Found student by username:', studentData)
-        }
-      }
-      
-      // วิธีที่ 2: ค้นหาจาก studentId (เนื่องจากนักศึกษาใช้ studentId ในการล็อกอิน)
-      if (!studentData && userData.username) {
-        console.log('Searching for user by studentId:', userData.username)
-        const { data: studentIdData, error: studentIdError } = await supabaseAdmin
-          .from('User')
-          .select('*')
-          .eq('studentId', userData.username)
-        
-        if (studentIdError) {
-          console.error('Error searching by studentId:', studentIdError)
-        } else {
-          console.log('StudentId search result:', studentIdData)
-          if (studentIdData && studentIdData.length > 0) {
-            studentData = studentIdData[0]
-            console.log('Found student by studentId:', studentData)
-          }
-        }
-      }
-      
-      // วิธีที่ 3: ถ้าไม่พบจาก username และ studentId ให้ลองค้นหาจาก email
-      if (!studentData && userData.email) {
-        console.log('Searching for user by email:', userData.email)
-        const { data: emailData, error: emailError } = await supabaseAdmin
-          .from('User')
-          .select('*')
-          .ilike('email', userData.email)
-        
-        if (emailError) {
-          console.error('Error searching by email:', emailError)
-        } else {
-          console.log('Email search result:', emailData)
-          if (emailData && emailData.length > 0) {
-            studentData = emailData[0]
-            console.log('Found student by email:', studentData)
-          }
-        }
-      }
-      
-      // วิธีที่ 4: ตรวจสอบข้อมูลผู้ใช้จาก Supabase Auth
-      if (!studentData) {
-        console.log('Checking user metadata in Supabase Auth')
-        const { data: authData, error: authError } = await supabase.auth.getUser()
-        
-        if (authError) {
-          console.error('Error getting user from Supabase Auth:', authError)
-        } else if (authData && authData.user) {
-          console.log('Found user in Supabase Auth:', authData.user)
-          
-          // ดึงข้อมูล metadata จาก user
-          const metadata = authData.user.user_metadata
-          console.log('User metadata:', metadata)
-          
-          if (metadata && metadata.username) {
-            console.log('Found username in metadata:', metadata.username)
-            
-            // ค้นหาผู้ใช้จาก username ใน metadata
-            const { data: metaUsernameData, error: metaUsernameError } = await supabaseAdmin
-              .from('User')
-              .select('*')
-              .ilike('username', metadata.username)
-            
-            if (metaUsernameError) {
-              console.error('Error searching by metadata username:', metaUsernameError)
-            } else {
-              console.log('Metadata username search result:', metaUsernameData)
-              if (metaUsernameData && metaUsernameData.length > 0) {
-                studentData = metaUsernameData[0]
-                console.log('Found student by metadata username:', studentData)
-              }
-            }
-          }
-          
-          // ถ้ายังไม่พบและมี id ใน metadata
-          if (!studentData && metadata && metadata.id) {
-            console.log('Found id in metadata:', metadata.id)
-            
-            // ค้นหาผู้ใช้จาก id ใน metadata
-            const { data: metaIdData, error: metaIdError } = await supabaseAdmin
-              .from('User')
-              .select('*')
-              .eq('id', metadata.id)
-            
-            if (metaIdError) {
-              console.error('Error searching by metadata id:', metaIdError)
-            } else {
-              console.log('Metadata id search result:', metaIdData)
-              if (metaIdData && metaIdData.length > 0) {
-                studentData = metaIdData[0]
-                console.log('Found student by metadata id:', studentData)
-              }
-            }
-          }
-        }
-      }
-      
-      // ถ้าไม่พบข้อมูลผู้ใช้
-      if (!studentData) {
-        console.error('Could not find student data')
-        throw new Error('ไม่พบข้อมูลผู้ใช้')
-      }
-      
-      // ตรวจสอบว่าพบข้อมูลนักศึกษาหรือไม่
-      if (!studentData) {
-        console.error('Student data not found for user:', userData)
-        throw new Error('ไม่พบข้อมูลนักศึกษา กรุณาติดต่อผู้ดูแลระบบ')
-      }
-      
-      console.log('Using student data:', studentData)
       
       // ค้นหาข้อมูลอาจารย์ที่ปรึกษา
-      console.log('Searching for advisor by id:', appointmentData.advisorId)
+      console.log('Searching for advisor with ID:', appointmentData.advisorId)
       const { data: advisor, error: advisorError } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -775,50 +580,78 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .single()
       
       if (advisorError) {
-        console.error('Error getting advisor data:', advisorError)
-        throw new Error('ไม่พบข้อมูลอาจารย์ที่ปรึกษา')
+        console.error('Error searching for advisor:', advisorError)
+        throw new Error('ไม่สามารถค้นหาข้อมูลอาจารย์ที่ปรึกษาได้')
       }
       
       if (!advisor) {
-        console.error('No advisor data found')
+        console.error('Advisor not found with ID:', appointmentData.advisorId)
         throw new Error('ไม่พบข้อมูลอาจารย์ที่ปรึกษา')
       }
       
       console.log('Found advisor data:', advisor)
       
-      // สร้างข้อมูลการนัดหมาย
-      const newAppointment = {
-        advisorId: appointmentData.advisorId,
-        studentId: studentData.id,
-        requestDate: new Date(),
-        preferredDate: appointmentData.preferredDate,
-        preferredTime: appointmentData.preferredTime,
-        description: appointmentData.description,
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // ค้นหาข้อมูลนักศึกษา
+      console.log('Searching for student with ID:', appointmentData.studentId)
+      const { data: student, error: studentError } = await supabaseAdmin
+        .from('User')
+        .select('*')
+        .eq('id', appointmentData.studentId)
+        .single()
+      
+      if (studentError) {
+        console.error('Error searching for student:', studentError)
+        throw new Error('ไม่สามารถค้นหาข้อมูลนักศึกษาได้')
       }
       
-      console.log('Creating new appointment:', newAppointment)
+      if (!student) {
+        console.error('Student not found with ID:', appointmentData.studentId)
+        throw new Error('ไม่พบข้อมูลนักศึกษา')
+      }
+      
+      console.log('Found student data:', student)
+      
+      // สร้างข้อมูลการนัดหมายในรูปแบบ snake_case ตามที่ใช้ใน Supabase
+      const newAppointment = {
+        advisor_id: appointmentData.advisorId,
+        student_id: appointmentData.studentId,
+        topic: appointmentData.topic,
+        description: appointmentData.description || null,
+        request_date: new Date().toISOString(),
+        preferred_date: appointmentData.preferredDate ? 
+          (appointmentData.preferredDate instanceof Date ? 
+            appointmentData.preferredDate.toISOString() : 
+            appointmentData.preferredDate) : 
+          null,
+        preferred_time: appointmentData.preferredTime,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      console.log('Creating new appointment with data:', newAppointment)
       
       // บันทึกข้อมูลการนัดหมายลงในฐานข้อมูล
-      const { data: insertData, error: insertError } = await supabaseAdmin
-        .from('Appointment')
-        .insert([newAppointment])
-        .select()
-      
-      if (insertError) {
-        console.error('Error inserting appointment:', insertError)
-        throw new Error('ไม่สามารถสร้างการนัดหมายได้: ' + insertError.message)
+      try {
+        const { data: insertData, error: insertError } = await supabaseAdmin
+          .from('appointment')
+          .insert([newAppointment])
+          .select()
+        
+        if (insertError) {
+          console.error('Error inserting appointment:', insertError)
+          throw new Error(`ไม่สามารถสร้างการนัดหมายได้: ${insertError.message}`)
+        }
+        
+        console.log('Appointment created successfully:', insertData)
+        return insertData ? insertData[0] : null
+      } catch (error) {
+        console.error('Exception when creating appointment:', error)
+        throw error
       }
-      
-      console.log('Appointment created successfully:', insertData)
-      return insertData[0]
-    } catch (err: any) {
-      error.value = err.message
-      throw err
-    } finally {
-      loading.value = false
+    } catch (error: any) {
+      console.error('Error in requestAppointment:', error)
+      throw error
     }
   }
 
@@ -830,10 +663,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
       
       const updateData = {
         status: 'scheduled',
-        appointmentDate: appointmentDate.toISOString(),
+        appointment_date: appointmentDate.toISOString(),
         location,
         note,
-        updatedAt: new Date().toISOString()
+        updated_at: new Date().toISOString()
       }
       
       const { data: appointmentResult, error: err } = await supabaseAdmin
@@ -873,7 +706,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .from('Appointment')
         .update({
           status: 'cancelled',
-          updatedAt: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -909,7 +742,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .from('Appointment')
         .update({
           status: 'cancelled',
-          updatedAt: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -935,7 +768,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       
       const updateData = {
         status: 'confirmed',
-        updatedAt: new Date().toISOString()
+        updated_at: new Date().toISOString()
       }
       
       const { data: appointmentResult, error: err } = await supabaseAdmin
@@ -974,10 +807,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .from('Appointment')
         .select(`
           *,
-          student:studentId(id, firstName, lastName, studentId, profileImage, department)
+          student:student_id(id, firstName, lastName, studentId, profileImage, department)
         `)
-        .eq('advisorId', user.id)
-        .order('createdAt', { ascending: false })
+        .eq('advisor_id', user.id)
+        .order('created_at', { ascending: false })
       
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลการนัดหมายได้: ' + err.message)
@@ -1010,10 +843,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .from('Appointment')
         .select(`
           *,
-          advisor:advisorId(id, firstName, lastName, profileImage, department)
+          advisor:advisor_id(id, firstName, lastName, profileImage, department)
         `)
-        .eq('studentId', user.id)
-        .order('createdAt', { ascending: false })
+        .eq('student_id', user.id)
+        .order('created_at', { ascending: false })
       
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลการนัดหมายได้: ' + err.message)
@@ -1038,9 +871,9 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .from('Appointment')
         .select(`
           *,
-          advisor:advisorId(id, firstName, lastName, profileImage, department)
+          advisor:advisor_id(id, firstName, lastName, profileImage, department)
         `)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
       
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลการนัดหมายได้: ' + err.message)
@@ -1067,7 +900,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .select('id, firstName, lastName, studentId, department, profileImage, advisorId')
         .not('advisorId', 'is', null)
         .eq('role', 'student')
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
       
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลความสัมพันธ์ได้: ' + err.message)
@@ -1213,8 +1046,8 @@ export const useAdvisorStore = defineStore('advisor', () => {
       const { data, error: err } = await supabaseAdmin
         .from('Comment')
         .select('*')
-        .eq('studentId', studentId)
-        .order('createdAt', { ascending: true })
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: true })
       
       if (err) {
         throw err
@@ -1258,12 +1091,12 @@ export const useAdvisorStore = defineStore('advisor', () => {
       // แสดงข้อมูลที่จะส่งในคอนโซล
       console.log('ข้อมูลที่จะส่ง:', {
         id: commentId,
-        advisorId,
-        studentId: commentData.studentId,
+        advisor_id: advisorId,
+        student_id: commentData.studentId,
         content: commentData.content,
-        isAdvisorComment: commentData.isAdvisorComment,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_advisor_comment: commentData.isAdvisorComment,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       
       // ทดสอบการเชื่อมต่อกับตาราง Comment
@@ -1285,12 +1118,12 @@ export const useAdvisorStore = defineStore('advisor', () => {
         .insert([
           {
             id: commentId,
-            advisorId,
-            studentId: commentData.studentId,
+            advisor_id: advisorId,
+            student_id: commentData.studentId,
             content: commentData.content,
-            isAdvisorComment: commentData.isAdvisorComment,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            is_advisor_comment: commentData.isAdvisorComment,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ])
         .select()
@@ -1326,66 +1159,42 @@ export const useAdvisorStore = defineStore('advisor', () => {
   // ตรวจสอบสถานะการเข้าสู่ระบบ
   const checkSession = async () => {
     try {
-      // ตรวจสอบ session จาก Supabase
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      console.log('Checking session status')
+      const { data, error } = await supabase.auth.getSession()
       
-      if (sessionError) {
-        console.error('Error getting session:', sessionError)
-        // ไม่ throw error แต่ใช้ข้อมูลจาก localStorage แทน
-        console.log('Using localStorage data instead due to session error')
+      if (error) {
+        console.error('Error checking session:', error)
+        return { data: { session: null, user: null }, error }
       }
       
-      // ถ้าไม่มี session แต่มีข้อมูลผู้ใช้ใน localStorage
-      if (!sessionData.session) {
+      if (!data.session) {
         console.log('No active session found in Supabase, but using localStorage data')
         
+        // ถ้าไม่มีเซสชันใน Supabase แต่มีข้อมูลใน localStorage ให้ใช้ข้อมูลจาก localStorage แทน
         const storedUser = localStorage.getItem('user')
         if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser)
-            console.log('Using user data from localStorage:', userData)
-            
-            // ไม่พยายามสร้าง session ใหม่ทุกครั้ง เพราะอาจติด rate limit
-            // แต่ส่งข้อมูลผู้ใช้จาก localStorage กลับไปใช้งานแทน
-            return { 
-              data: { 
-                session: null,
-                user: userData 
-              }, 
-              error: null 
-            }
-          } catch (parseErr) {
-            console.error('Error parsing user data from localStorage:', parseErr)
-          }
-        } else {
-          console.warn('No user data found in localStorage')
-        }
-      }
-      
-      return { data: sessionData, error: sessionError }
-    } catch (err: any) {
-      console.error('Error checking session:', err)
-      error.value = err.message
-      
-      // ไม่ throw error แต่ใช้ข้อมูลจาก localStorage แทน
-      const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        try {
           const userData = JSON.parse(storedUser)
-          console.log('Using user data from localStorage due to error:', userData)
+          console.log('Using user data from localStorage:', userData.username)
+          
+          // ไม่ต้องพยายาม login อีก เพราะอาจทำให้เกิดการวนลูป
+          // แค่ส่งข้อมูลกลับไปใช้งานเลย
           return { 
             data: { 
-              session: null,
+              session: { user: { id: userData.id } }, 
               user: userData 
             }, 
             error: null 
           }
-        } catch (parseErr) {
-          console.error('Error parsing user data from localStorage:', parseErr)
         }
       }
       
-      throw err
+      return { data, error }
+    } catch (err) {
+      console.error('Exception in checkSession:', err)
+      return { 
+        data: { session: null, user: null }, 
+        error: err instanceof Error ? err : new Error(String(err)) 
+      }
     }
   }
 

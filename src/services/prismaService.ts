@@ -392,7 +392,9 @@ export const appointmentService = {
         note: appointmentData.note || null,
         startTime: appointmentData.appointmentDate || new Date(),
         endTime: appointmentData.appointmentDate 
-          ? new Date(appointmentData.appointmentDate.getTime() + 60 * 60 * 1000) 
+          ? new Date(typeof appointmentData.appointmentDate === 'string' 
+              ? new Date(appointmentData.appointmentDate).getTime() + 60 * 60 * 1000
+              : appointmentData.appointmentDate.getTime() + 60 * 60 * 1000) 
           : new Date(new Date().getTime() + 60 * 60 * 1000)
       }
     })
@@ -428,7 +430,13 @@ export const appointmentService = {
     
     if (appointmentData.appointmentDate) {
       prismaAppointmentData.startTime = appointmentData.appointmentDate
-      prismaAppointmentData.endTime = new Date(appointmentData.appointmentDate.getTime() + 60 * 60 * 1000)
+      if (typeof appointmentData.appointmentDate === 'string') {
+        prismaAppointmentData.endTime = new Date(new Date(appointmentData.appointmentDate).getTime() + 60 * 60 * 1000)
+      } else if (appointmentData.appointmentDate instanceof Date) {
+        prismaAppointmentData.endTime = new Date(appointmentData.appointmentDate.getTime() + 60 * 60 * 1000)
+      } else {
+        throw new Error('appointmentDate must be a string or a Date object')
+      }
     }
     
     const appointment = await prisma.appointment.update({

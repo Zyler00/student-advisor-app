@@ -2,20 +2,20 @@
 import { ref, onMounted } from 'vue'
 import { useAdvisorStore } from '../../stores/advisor'
 import { useAuthStore } from '../../stores/auth'
+import { supabaseAdmin } from '../../services/supabase'
 import type { Appointment } from '../../types'
 
 const advisorStore = useAdvisorStore()
 const authStore = useAuthStore()
+
+// ข้อมูลการนัดหมาย
 const appointments = ref<Appointment[]>([])
-const loading = ref(true)
+const loading = ref(false)
 const error = ref<string | null>(null)
-const formLoading = ref(false)
 
-// Modals
+// ข้อมูลสำหรับการนัดหมาย
 const showRequestModal = ref(false)
-const showDetailsModal = ref(false)
-
-// ข้อมูลฟอร์ม
+const formLoading = ref(false)
 const formData = ref({
   topic: '',
   description: '',
@@ -25,56 +25,6 @@ const formData = ref({
 
 // การนัดหมายที่เลือก
 const selectedAppointment = ref<Appointment | null>(null)
-
-// ตรวจสอบสถานะการเข้าสู่ระบบ
-const checkAuthStatus = async () => {
-  try {
-    // ตรวจสอบข้อมูลผู้ใช้จาก localStorage
-    const storedUser = localStorage.getItem('user')
-    if (!storedUser) {
-      console.error('No user data found in localStorage')
-      error.value = 'กรุณาเข้าสู่ระบบก่อนใช้งาน'
-      return false
-    }
-    
-    let userData
-    try {
-      userData = JSON.parse(storedUser)
-      if (!userData || !userData.id) {
-        console.error('Invalid user data in localStorage')
-        error.value = 'ข้อมูลผู้ใช้ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่'
-        return false
-      }
-      
-      // ตั้งค่าข้อมูลผู้ใช้ในสโตร์ทันที
-      authStore.user = userData
-      console.log('Using user data from localStorage:', userData)
-      
-      // ตรวจสอบ session จาก Supabase (ไม่บังคับ)
-      try {
-        const { data: sessionData } = await advisorStore.checkSession()
-        if (sessionData && sessionData.session) {
-          console.log('Active session found in Supabase')
-        } else {
-          console.log('No active session found in Supabase, but using localStorage data')
-          // ไม่ต้องพยายาม re-login ทุกครั้ง เพราะอาจติด rate limit
-        }
-      } catch (sessionErr) {
-        console.warn('Error checking session, but continuing with localStorage data:', sessionErr)
-      }
-      
-      return true
-    } catch (parseErr) {
-      console.error('Error parsing user data from localStorage:', parseErr)
-      error.value = 'ข้อมูลผู้ใช้ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่'
-      return false
-    }
-  } catch (err) {
-    console.error('Error in checkAuthStatus:', err)
-    error.value = 'เกิดข้อผิดพลาดในการตรวจสอบสถานะการเข้าสู่ระบบ'
-    return false
-  }
-}
 
 // โหลดข้อมูลการนัดหมาย
 const loadAppointments = async () => {
@@ -86,22 +36,44 @@ const loadAppointments = async () => {
   }
 }
 
-// ดึงข้อมูลการนัดหมาย
+// ดึงข้อมูลการนัดหมายของนักศึกษา
 const fetchAppointments = async () => {
   try {
     loading.value = true
     
-    // ตรวจสอบสถานะการเข้าสู่ระบบก่อน
-    const isAuthenticated = await checkAuthStatus()
-    if (!isAuthenticated) {
+    // ดึงข้อมูลผู้ใช้จาก localStorage
+    const storedUser = localStorage.getItem('user')
+    if (!storedUser) {
+      error.value = 'ไม่พบข้อมูลผู้ใช้'
       loading.value = false
       return
     }
     
-    const data = await advisorStore.fetchStudentAppointments()
-    appointments.value = data
-  } catch (err: any) {
-    error.value = err.message
+    const userData = JSON.parse(storedUser)
+    console.log('User data from localStorage:', userData)
+    
+    // ดึงข้อมูลการนัดหมายโดยตรงจาก Supabase
+    const { data, error: fetchError } = await supabaseAdmin
+      .from('Appointment')
+      .select(`
+        *,
+        advisor:advisorId(id, firstName, lastName, profileImage, department)
+      `)
+      .eq('studentId', userData.id)
+      .order('createdAt', { ascending: false })
+    
+    if (fetchError) {
+      console.error('Error fetching appointments:', fetchError)
+      error.value = `ไม่สามารถดึงข้อมูลการนัดหมายได้: ${fetchError.message}`
+      loading.value = false
+      return
+    }
+    
+    console.log('Appointment data fetched:', data)
+    appointments.value = data || []
+  } catch (err) {
+    console.error('Exception in fetchAppointments:', err)
+    error.value = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการดึงข้อมูลการนัดหมาย'
   } finally {
     loading.value = false
   }
@@ -113,23 +85,87 @@ const handleRequestAppointment = async () => {
     formLoading.value = true
     error.value = null
     
-    // ตรวจสอบสถานะการเข้าสู่ระบบก่อน
-    const isAuthenticated = await checkAuthStatus()
-    if (!isAuthenticated) {
+    // ตรวจสอบว่ามีข้อมูลที่จำเป็นครบถ้วนหรือไม่
+    if (!formData.value.topic) {
+      error.value = 'กรุณาระบุหัวข้อการนัดหมาย'
       formLoading.value = false
       return
     }
     
+    // ดึงข้อมูลผู้ใช้จาก localStorage เพื่อให้แน่ใจว่ามีข้อมูลล่าสุด
+    const storedUser = localStorage.getItem('user')
+    if (!storedUser) {
+      error.value = 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่'
+      formLoading.value = false
+      return
+    }
+    
+    const userData = JSON.parse(storedUser)
+    if (!userData.advisorId) {
+      error.value = 'ไม่พบข้อมูลอาจารย์ที่ปรึกษา กรุณาติดต่อผู้ดูแลระบบ'
+      formLoading.value = false
+      return
+    }
+    
+    // แสดงข้อมูลในคอนโซลเพื่อตรวจสอบ
+    console.log('User data from localStorage:', userData)
+    
+    // กำหนดเวลาเริ่มต้นและสิ้นสุด (เพิ่ม 1 ชั่วโมงจากเวลาเริ่มต้น)
+    const startDate = formData.value.preferredDate ? new Date(formData.value.preferredDate) : new Date()
+    
+    // ปรับเวลาตามช่วงเวลาที่เลือก
+    if (formData.value.preferredTime === 'ช่วงเช้า') {
+      startDate.setHours(9, 0, 0, 0)
+    } else if (formData.value.preferredTime === 'ช่วงบ่าย') {
+      startDate.setHours(13, 0, 0, 0)
+    } else if (formData.value.preferredTime === 'ช่วงเย็น') {
+      startDate.setHours(16, 0, 0, 0)
+    }
+    
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // เพิ่ม 1 ชั่วโมง
+    
     // สร้างข้อมูลการนัดหมาย
     const appointmentData = {
       topic: formData.value.topic,
-      description: formData.value.description,
-      preferredDate: formData.value.preferredDate ? new Date(formData.value.preferredDate) : null,
-      preferredTime: formData.value.preferredTime || null
+      description: formData.value.description || '',
+      preferredDate: formData.value.preferredDate || null,
+      preferredTime: formData.value.preferredTime || null,
+      advisorId: userData.advisorId,
+      studentId: userData.id
     }
     
-    // ส่งคำขอนัดหมาย
-    await advisorStore.requestAppointment(appointmentData)
+    console.log('Sending appointment data:', appointmentData)
+    
+    // สร้างข้อมูลสำหรับส่งไปยัง Supabase
+    const appointmentRecord = {
+      id: crypto.randomUUID(), // สร้าง UUID สำหรับ id
+      advisorId: appointmentData.advisorId,
+      studentId: appointmentData.studentId,
+      title: appointmentData.topic,
+      description: appointmentData.description || null,
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    console.log('Appointment record to be inserted:', appointmentRecord)
+    
+    // ส่งคำขอนัดหมายโดยตรงไปยัง Supabase
+    const { data, error: supabaseError } = await supabaseAdmin
+      .from('Appointment')
+      .insert([appointmentRecord])
+      .select()
+    
+    if (supabaseError) {
+      console.error('Error creating appointment:', supabaseError)
+      error.value = `ไม่สามารถสร้างการนัดหมายได้: ${supabaseError.message}`
+      formLoading.value = false
+      return
+    }
+    
+    console.log('Appointment created successfully:', data)
     
     // รีเซ็ตฟอร์ม
     formData.value = {
@@ -139,31 +175,17 @@ const handleRequestAppointment = async () => {
       preferredTime: ''
     }
     
-    // ปิด Modal
+    // ปิด modal
     showRequestModal.value = false
     
-    // แสดงข้อความแจ้งเตือน
-    alert('ส่งคำขอนัดหมายเรียบร้อยแล้ว')
-    
-    // ดึงข้อมูลการนัดหมายใหม่
+    // โหลดข้อมูลการนัดหมายใหม่
     await fetchAppointments()
-  } catch (err: any) {
+    
+    // แสดงข้อความสำเร็จ
+    alert('ส่งคำขอนัดหมายเรียบร้อยแล้ว')
+  } catch (err) {
     console.error('Error requesting appointment:', err)
-    
-    // แสดงข้อความแจ้งเตือนที่ชัดเจน
-    let errorMessage = 'เกิดข้อผิดพลาดในการขอนัดหมาย'
-    
-    if (err.message) {
-      errorMessage = err.message
-      
-      // ตรวจสอบข้อความแจ้งเตือนเฉพาะ
-      if (err.message.includes('ไม่พบข้อมูลผู้ใช้')) {
-        errorMessage = 'ไม่พบข้อมูลผู้ใช้ กรุณาออกจากระบบและเข้าสู่ระบบใหม่อีกครั้ง'
-      }
-    }
-    
-    error.value = errorMessage
-    alert(errorMessage)
+    error.value = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการส่งคำขอนัดหมาย'
   } finally {
     formLoading.value = false
   }
@@ -301,6 +323,9 @@ const getStatusClass = (status: string | undefined) => {
       return 'bg-gray-100 text-gray-800'
   }
 }
+
+// Modal แสดงรายละเอียดการนัดหมาย
+const showDetailsModal = ref(false)
 
 onMounted(async () => {
   await loadAppointments()
@@ -462,10 +487,10 @@ onMounted(async () => {
                       <div class="mt-1 grid grid-cols-3 gap-2">
                         <button 
                           type="button"
-                          @click="formData.preferredTime = 'morning'"
+                          @click="formData.preferredTime = 'ช่วงเช้า'"
                           :class="[
                             'py-2 px-3 border rounded-md text-sm font-medium',
-                            formData.preferredTime === 'morning' 
+                            formData.preferredTime === 'ช่วงเช้า' 
                               ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
                               : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                           ]"
@@ -474,10 +499,10 @@ onMounted(async () => {
                         </button>
                         <button 
                           type="button"
-                          @click="formData.preferredTime = 'afternoon'"
+                          @click="formData.preferredTime = 'ช่วงบ่าย'"
                           :class="[
                             'py-2 px-3 border rounded-md text-sm font-medium',
-                            formData.preferredTime === 'afternoon' 
+                            formData.preferredTime === 'ช่วงบ่าย' 
                               ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
                               : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                           ]"
@@ -486,10 +511,10 @@ onMounted(async () => {
                         </button>
                         <button 
                           type="button"
-                          @click="formData.preferredTime = 'evening'"
+                          @click="formData.preferredTime = 'ช่วงเย็น'"
                           :class="[
                             'py-2 px-3 border rounded-md text-sm font-medium',
-                            formData.preferredTime === 'evening' 
+                            formData.preferredTime === 'ช่วงเย็น' 
                               ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
                               : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                           ]"
