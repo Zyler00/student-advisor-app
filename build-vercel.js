@@ -1,14 +1,12 @@
-// build-vercel.js
+
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// สร้างโฟลเดอร์ dist ถ้ายังไม่มี
 if (!fs.existsSync('dist')) {
   fs.mkdirSync('dist');
 }
 
-// สร้างไฟล์ index.html ใน dist
 const indexHtml = `
 <!DOCTYPE html>
 <html lang="en">

@@ -4,13 +4,23 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// สร้างโฟลเดอร์ dist ถ้ายังไม่มี
-if (!fs.existsSync('dist')) {
-  fs.mkdirSync('dist');
-}
+try {
+  console.log('Starting build process...');
 
-// สร้างไฟล์ index.html ใน dist
-const indexHtml = `
+  console.log('Running Vite build...');
+  execSync('npx vite build', { stdio: 'inherit' });
+  
+  console.log('Build completed successfully!');
+} catch (error) {
+  console.error('Build failed:', error.message);
+
+  console.log('Creating fallback index.html...');
+
+  if (!fs.existsSync('dist')) {
+    fs.mkdirSync('dist');
+  }
+
+  const indexHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,6 +73,6 @@ const indexHtml = `
 </html>
 `;
 
-fs.writeFileSync(path.join('dist', 'index.html'), indexHtml);
-
-console.log('Build completed successfully!');
+  fs.writeFileSync(path.join('dist', 'index.html'), indexHtml);
+  console.log('Fallback index.html created successfully!');
+}

@@ -1,8 +1,8 @@
 {
-  "framework": "vite",
-  "installCommand": "npm install",
+  "framework": null,
   "buildCommand": "npm run build-vercel",
   "outputDirectory": "dist",
+  "installCommand": "npm install",
   "routes": [
     {
       "src": "/(.*)",
