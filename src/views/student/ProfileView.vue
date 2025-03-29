@@ -12,7 +12,6 @@
       
       <div v-else class="px-4 py-5 sm:px-6">
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <!-- ข้อมูลส่วนตัว -->
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
               <h3 class="text-lg leading-6 font-medium text-gray-900">ข้อมูลนักศึกษา</h3>
@@ -59,8 +58,6 @@
               </dl>
             </div>
           </div>
-          
-          <!-- ข้อมูลอาจารย์ที่ปรึกษา -->
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:px-6">
               <h3 class="text-lg leading-6 font-medium text-gray-900">อาจารย์ที่ปรึกษา</h3>
@@ -110,8 +107,6 @@
         </div>
       </div>
     </div>
-    
-    <!-- Modal แก้ไขข้อมูลส่วนตัว -->
     <div v-if="showEditModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showEditModal = false"></div>
@@ -260,17 +255,14 @@ const fetchUserData = async () => {
   try {
     loading.value = true
     
-    // โหลดข้อมูลผู้ใช้
     const userData = await authStore.fetchUserProfile()
     user.value = userData
-    
-    // โหลดข้อมูลอาจารย์ที่ปรึกษา
+ 
     if (userData.advisorId) {
       const advisorData = await advisorStore.fetchAdvisorById(userData.advisorId)
       advisor.value = advisorData
     }
-    
-    // เตรียมข้อมูลสำหรับฟอร์ม
+ 
     formData.value = {
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
@@ -289,8 +281,7 @@ const handleImageChange = (event: Event) => {
   if (target.files && target.files.length > 0) {
     const file = target.files[0]
     profileImageFile.value = file
-    
-    // สร้าง URL สำหรับแสดงตัวอย่างรูปภาพ
+
     profileImagePreview.value = URL.createObjectURL(file)
   }
 }
@@ -299,43 +290,36 @@ const handleUpdateProfile = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // สร้างข้อมูลสำหรับอัปเดต
+
     const updateData = {
       firstName: formData.value.firstName,
       lastName: formData.value.lastName,
       email: formData.value.email,
       phone: formData.value.phone
     }
-    
-    // ถ้ามีการเปลี่ยนแปลงรูปภาพ ให้อัปโหลดไปยัง Supabase Storage
+
     if (profileImageFile.value) {
       try {
-        // อัปโหลดรูปภาพไปยัง Supabase Storage
         const profileImageUrl = await storageService.uploadProfileImage(
           profileImageFile.value,
           authStore.user?.id || 'unknown-user'
         )
-        
-        // อัปเดตโปรไฟล์พร้อมกับ URL ของรูปภาพ
+
         await authStore.updateUserProfile({
           ...updateData,
           profileImage: profileImageUrl
         })
       } catch (uploadError) {
         console.error('ไม่สามารถอัปโหลดรูปภาพได้:', uploadError)
-        // ถ้าอัปโหลดไม่สำเร็จ ให้อัปเดตข้อมูลอื่นๆ ไปก่อน
         await authStore.updateUserProfile(updateData)
       }
     } else {
       await authStore.updateUserProfile(updateData)
     }
     
-    // ปิด modal และโหลดข้อมูลใหม่
     showEditModal.value = false
     await fetchUserData()
-    
-    // ล้างข้อมูลรูปภาพ
+
     profileImagePreview.value = null
     profileImageFile.value = null
   } catch (err: any) {

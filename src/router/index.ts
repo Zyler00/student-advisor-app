@@ -115,9 +115,8 @@ const router = createRouter({
   ]
 })
 
-// ตรวจสอบการยืนยันตัวตนและสิทธิ์การเข้าถึง
+
 router.beforeEach((to, from, next) => {
-  // ตรวจสอบว่ามีผู้ใช้ที่ล็อกอินอยู่หรือไม่
   const isAuthenticated = localStorage.getItem('user') !== null
   const userString = localStorage.getItem('user')
   const user = userString ? JSON.parse(userString) : null

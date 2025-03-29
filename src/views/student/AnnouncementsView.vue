@@ -4,8 +4,6 @@
       <h3 class="text-lg leading-6 font-medium text-black">ประกาศจากอาจารย์ที่ปรึกษา</h3>
       <p class="mt-1 max-w-2xl text-sm text-black">ประกาศและข่าวสารสำคัญจากอาจารย์ที่ปรึกษาของคุณ</p>
     </div>
-    
-    <!-- รายการประกาศ -->
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></div>
@@ -45,8 +43,6 @@
         </ul>
       </div>
     </div>
-    
-    <!-- Modal แสดงรายละเอียดประกาศ -->
     <div v-if="showDetailsModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showDetailsModal = false"></div>
@@ -147,7 +143,6 @@ const formatDate = (date?: Date) => {
   })
 }
 
-// ฟังก์ชันสำหรับการเปิด URL
 const openUrl = (url: string) => {
   window.open(url, '_blank')
 }

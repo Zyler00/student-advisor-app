@@ -69,5 +69,4 @@
 </template>
 
 <script setup lang="ts">
-// ไม่มีโค้ด JavaScript เพิ่มเติมสำหรับหน้านี้
 </script>

@@ -26,7 +26,6 @@
               </div>
               
               <div v-else>
-                <!-- แสดงข้อความสนทนา -->
                 <div class="space-y-4 h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg mb-4" ref="chatContainer">
                   <div v-if="loadingComments" class="flex justify-center">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -52,8 +51,6 @@
                     </div>
                   </div>
                 </div>
-                
-                <!-- ฟอร์มส่งข้อความ -->
                 <div class="mt-4">
                   <form @submit.prevent="submitComment" class="flex">
                     <textarea 
@@ -96,21 +93,17 @@ const loadingComments = ref(true)
 const formLoading = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
-// โหลดข้อมูลอาจารย์ที่ปรึกษา
 onMounted(async () => {
   try {
     loading.value = true
-    
-    // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       throw new Error('ไม่พบข้อมูลผู้ใช้')
     }
-    
-    // ดึงข้อมูลผู้ใช้ปัจจุบัน (นักศึกษา)
+
     const user = JSON.parse(storedUser)
-    
-    // ดึงข้อมูลอาจารย์ที่ปรึกษา
+
     if (user.advisorId) {
       advisor.value = await studentStore.fetchAdvisorById(user.advisorId)
       await fetchComments()
@@ -122,24 +115,20 @@ onMounted(async () => {
   }
 })
 
-// ดึงข้อความสนทนา
 const fetchComments = async () => {
   try {
     loadingComments.value = true
-    
-    // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       throw new Error('ไม่พบข้อมูลผู้ใช้')
     }
-    
-    // ดึงข้อมูลผู้ใช้ปัจจุบัน (นักศึกษา)
+
     const user = JSON.parse(storedUser)
     
     const commentsData = await studentStore.fetchStudentComments(user.id)
     comments.value = commentsData || []
-    
-    // เลื่อนไปที่ข้อความล่าสุด
+
     await nextTick()
     scrollToBottom()
   } catch (err) {
@@ -149,7 +138,6 @@ const fetchComments = async () => {
   }
 }
 
-// ส่งข้อความใหม่
 const submitComment = async () => {
   if (!commentContent.value.trim()) {
     alert('กรุณากรอกข้อความก่อนส่ง')
@@ -164,14 +152,12 @@ const submitComment = async () => {
   
   try {
     formLoading.value = true
-    
-    // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       throw new Error('ไม่พบข้อมูลผู้ใช้')
     }
     
-    // ดึงข้อมูลผู้ใช้ปัจจุบัน (นักศึกษา)
     const user = JSON.parse(storedUser)
     
     await studentStore.addStudentComment({
@@ -180,8 +166,7 @@ const submitComment = async () => {
       content: commentContent.value,
       isAdvisorComment: false
     })
-    
-    // รีเซ็ตฟอร์มและโหลดคอมเมนต์ใหม่
+
     commentContent.value = ''
     await fetchComments()
   } catch (err) {
@@ -192,14 +177,12 @@ const submitComment = async () => {
   }
 }
 
-// เลื่อนไปที่ข้อความล่าสุด
 const scrollToBottom = () => {
   if (chatContainer.value) {
     chatContainer.value.scrollTop = chatContainer.value.scrollHeight
   }
 }
 
-// จัดรูปแบบวันที่
 const formatDate = (date: Date | string) => {
   if (!date) return ''
   const d = new Date(date)
@@ -212,7 +195,6 @@ const formatDate = (date: Date | string) => {
   })
 }
 
-// เลื่อนไปที่ข้อความล่าสุดเมื่อมีข้อความใหม่
 watch(comments, () => {
   nextTick(() => {
     scrollToBottom()

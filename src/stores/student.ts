@@ -10,14 +10,11 @@ export const useStudentStore = defineStore('student', () => {
   const appointments = ref<Appointment[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-
-  // ดึงข้อมูลอาจารย์ที่ปรึกษาตาม ID
   const fetchAdvisorById = async (advisorId: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
@@ -47,13 +44,11 @@ export const useStudentStore = defineStore('student', () => {
     }
   }
 
-  // ดึงข้อมูลประกาศจากอาจารย์ที่ปรึกษา
   const fetchAnnouncementsFromAdvisor = async (advisorId: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+  
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
@@ -84,13 +79,11 @@ export const useStudentStore = defineStore('student', () => {
     }
   }
 
-  // ดึงข้อมูลการนัดหมายของนักศึกษา
   const fetchStudentAppointments = async (studentId: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+ 
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
@@ -121,19 +114,16 @@ export const useStudentStore = defineStore('student', () => {
     }
   }
 
-  // ดึงข้อมูลการสนทนากับนักศึกษา
   const fetchStudentComments = async (studentId: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // ดึงข้อมูลความคิดเห็น
+
       const { data, error: err } = await supabaseAdmin
         .from('Comment')
         .select('*')
@@ -158,7 +148,6 @@ export const useStudentStore = defineStore('student', () => {
     }
   }
 
-  // เพิ่มความคิดเห็นให้กับนักศึกษา
   const addStudentComment = async (commentData: { 
     studentId: string, 
     advisorId: string, 
@@ -168,17 +157,14 @@ export const useStudentStore = defineStore('student', () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // สร้าง UUID สำหรับ ID ของความคิดเห็น
+
       const commentId = crypto.randomUUID()
-      
-      // แสดงข้อมูลที่จะส่งในคอนโซล
+
       console.log('ข้อมูลที่จะส่ง:', {
         id: commentId,
         advisorId: commentData.advisorId,

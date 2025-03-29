@@ -18,8 +18,6 @@
         </select>
       </div>
     </div>
-    
-    <!-- รายการการนัดหมาย -->
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -130,8 +128,6 @@
         </table>
       </div>
     </div>
-    
-    <!-- Modal ยืนยันการนัดหมาย -->
     <div v-if="showConfirmModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showConfirmModal = false"></div>
@@ -223,8 +219,6 @@
         </div>
       </div>
     </div>
-    
-    <!-- Modal รายละเอียดการนัดหมาย -->
     <div v-if="showDetailsModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showDetailsModal = false"></div>
@@ -331,16 +325,13 @@ const showDetailsModal = ref(false)
 const formLoading = ref(false)
 const selectedAppointment = ref<Appointment | null>(null)
 
-// ข้อมูลสำหรับการยืนยันการนัดหมาย
 const appointmentDate = ref('')
 const appointmentTime = ref('')
 const location = ref('')
 const note = ref('')
 
-// ตัวแปรสำหรับการแคช
 const studentMap = ref<Map<string, User>>(new Map())
 
-// กรองการนัดหมายตามสถานะ
 const filteredAppointments = computed(() => {
   if (statusFilter.value === 'all') {
     return appointments.value
@@ -368,8 +359,7 @@ const fetchStudents = async () => {
   try {
     const data = await advisorStore.fetchAdvisorStudents()
     students.value = data
-    
-    // สร้าง map ของนักศึกษา
+
     studentMap.value = new Map()
     students.value.forEach(student => {
       studentMap.value.set(student.id, student)
@@ -380,7 +370,6 @@ const fetchStudents = async () => {
 }
 
 const filterAppointments = () => {
-  // ไม่ต้องทำอะไรเพิ่มเติม เพราะใช้ computed property
 }
 
 const getStudentName = (studentId: string) => {
@@ -462,23 +451,19 @@ const handleConfirmAppointment = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // สร้างวันที่นัดหมายจากข้อมูลที่กรอก
+ 
     const dateTime = new Date(`${appointmentDate.value}T${appointmentTime.value}`)
-    
-    // อัปเดตข้อมูลการนัดหมาย
+
     await advisorStore.confirmAppointment(
       selectedAppointment.value.id,
       dateTime,
       location.value,
       note.value
     )
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     showConfirmModal.value = false
     selectedAppointment.value = null
-    
-    // โหลดข้อมูลการนัดหมายใหม่
+
     await fetchAppointments()
   } catch (err: any) {
     error.value = err.message
@@ -506,7 +491,6 @@ const viewAppointmentDetails = (appointment: Appointment) => {
   showDetailsModal.value = true
 }
 
-// ฟังก์ชันสำหรับการเปิด URL
 const openUrl = (url: string) => {
   window.open(url, '_blank')
 }

@@ -12,8 +12,6 @@
         สร้างประกาศใหม่
       </button>
     </div>
-    
-    <!-- รายการประกาศ -->
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -67,8 +65,6 @@
         </ul>
       </div>
     </div>
-    
-    <!-- Modal สร้างประกาศใหม่ -->
     <div v-if="showAddModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showAddModal = false"></div>
@@ -244,16 +240,12 @@ const handleAddAnnouncement = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // ในระบบจริงควรมีการอัปโหลดไฟล์ไปยัง storage ก่อน
-    // แล้วจึงบันทึก URL ของไฟล์ลงในฐานข้อมูล
+
     let fileUrl = formData.value.fileUrl
     if (formData.value.file) {
-      // สมมติว่ามีการอัปโหลดไฟล์และได้ URL กลับมา
       fileUrl = 'https://example.com/files/' + formData.value.fileName
     }
-    
-    // สร้างข้อมูลประกาศ
+
     const announcementData = {
       title: formData.value.title,
       content: formData.value.content,
@@ -264,18 +256,14 @@ const handleAddAnnouncement = async () => {
     }
     
     if (isEditMode.value && editId.value) {
-      // อัปเดตประกาศ
       await advisorStore.updateAnnouncement(editId.value, announcementData)
     } else {
-      // สร้างประกาศใหม่
       await advisorStore.createAnnouncement(announcementData)
     }
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     resetForm()
     showAddModal.value = false
-    
-    // โหลดข้อมูลประกาศใหม่
+
     await fetchAnnouncements()
   } catch (err: any) {
     error.value = err.message
@@ -287,8 +275,7 @@ const handleAddAnnouncement = async () => {
 const editAnnouncement = (announcement: Announcement) => {
   isEditMode.value = true
   editId.value = announcement.id
-  
-  // กำหนดค่าเริ่มต้นให้กับฟอร์ม
+
   formData.value = {
     title: announcement.title,
     content: announcement.content,
@@ -297,8 +284,7 @@ const editAnnouncement = (announcement: Announcement) => {
     fileUrl: announcement.fileUrl || '',
     targetGroup: announcement.targetGroup || 'all'
   }
-  
-  // ถ้าเป็นการเลือกนักศึกษาเอง ให้กำหนดค่าเริ่มต้นให้กับ selectedStudents
+
   if (announcement.targetGroup === 'custom' && announcement.targetStudents) {
     selectedStudents.value = announcement.targetStudents
   } else {
@@ -348,7 +334,6 @@ const formatDate = (date?: Date) => {
   })
 }
 
-// ฟังก์ชันสำหรับการเปิด URL
 const openUrl = (url: string) => {
   window.open(url, '_blank')
 }

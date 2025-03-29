@@ -1,4 +1,3 @@
-// ประเภทข้อมูลผู้ใช้ระบบ
 export interface User {
   id: string;
   username: string;
@@ -10,15 +9,14 @@ export interface User {
   department: string | null;
   email?: string | null;
   phone?: string | null;
-  academicPosition?: string | null; // สำหรับอาจารย์
-  studentId?: string | null; // สำหรับนักศึกษา
-  title?: string | null; // คำนำหน้าชื่อ (ดร., ผศ., รศ., ศ.)
-  position?: string | null; // ตำแหน่งทางวิชาการ
-  office?: string | null; // ห้องทำงาน
-  advisorId?: string | null; // ID ของอาจารย์ที่ปรึกษา (สำหรับนักศึกษา)
+  academicPosition?: string | null;
+  studentId?: string | null;
+  title?: string | null;
+  position?: string | null;
+  office?: string | null; 
+  advisorId?: string | null;
 }
 
-// ประเภทข้อมูลความสัมพันธ์ระหว่างอาจารย์ที่ปรึกษาและนักศึกษา
 export interface AdvisorStudentRelation {
   id: string;
   advisorId: string;
@@ -26,7 +24,6 @@ export interface AdvisorStudentRelation {
   createdAt: Date;
 }
 
-// ประเภทข้อมูลความคิดเห็น
 export interface Comment {
   id: string;
   advisorId: string;
@@ -36,7 +33,6 @@ export interface Comment {
   isAdvisorComment: boolean;
 }
 
-// ประเภทข้อมูลประกาศ
 export interface Announcement {
   id: string;
   advisorId: string;
@@ -47,7 +43,6 @@ export interface Announcement {
   createdAt: Date;
 }
 
-// ประเภทข้อมูลการนัดหมาย
 export interface Appointment {
   id: string;
   advisorId: string;
@@ -57,15 +52,14 @@ export interface Appointment {
   startTime: Date | string;
   endTime: Date | string;
   status: 'pending' | 'scheduled' | 'confirmed' | 'cancelled';
-  location?: string | null; // สถานที่นัดพบ
-  note?: string | null; // บันทึกเพิ่มเติม
+  location?: string | null;
+  note?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
-  
-  // ฟิลด์เดิมที่อาจยังใช้ในโค้ดเก่า (จะถูกลบในอนาคต)
+
   requestDate?: Date | string;
-  preferredDate?: Date | string | null; // วันที่นักศึกษาต้องการนัดหมาย (รองรับทั้ง Date และ string)
-  preferredTime?: string | null; // ช่วงเวลาที่นักศึกษาสะดวก (morning, afternoon, evening)
+  preferredDate?: Date | string | null;
+  preferredTime?: string | null;
   appointmentDate?: Date | string | null;
   topic?: string;
 }

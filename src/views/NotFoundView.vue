@@ -21,5 +21,4 @@
 </template>
 
 <script setup lang="ts">
-// ไม่จำเป็นต้องมีโค้ดใดๆ ในส่วนนี้
 </script>

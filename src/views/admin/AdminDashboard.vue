@@ -70,7 +70,6 @@ const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
 onMounted(() => {
-  // ตรวจสอบว่าผู้ใช้เป็น admin หรือไม่
   if (!user.value || user.value.role !== 'admin') {
     router.push('/login')
   }

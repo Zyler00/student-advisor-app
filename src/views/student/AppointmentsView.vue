@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAdvisorStore } from '../../stores/advisor'
-import { useAuthStore } from '../../stores/auth'
 import { supabaseAdmin } from '../../services/supabase'
 import type { Appointment } from '../../types'
 
-const advisorStore = useAdvisorStore()
-const authStore = useAuthStore()
-
-// ข้อมูลการนัดหมาย
 const appointments = ref<Appointment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-// ข้อมูลสำหรับการนัดหมาย
 const showRequestModal = ref(false)
 const formLoading = ref(false)
 const formData = ref({
@@ -23,10 +16,8 @@ const formData = ref({
   preferredTime: ''
 })
 
-// การนัดหมายที่เลือก
 const selectedAppointment = ref<Appointment | null>(null)
 
-// โหลดข้อมูลการนัดหมาย
 const loadAppointments = async () => {
   try {
     await fetchAppointments()
@@ -36,12 +27,10 @@ const loadAppointments = async () => {
   }
 }
 
-// ดึงข้อมูลการนัดหมายของนักศึกษา
 const fetchAppointments = async () => {
   try {
     loading.value = true
-    
-    // ดึงข้อมูลผู้ใช้จาก localStorage
+  
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       error.value = 'ไม่พบข้อมูลผู้ใช้'
@@ -51,8 +40,7 @@ const fetchAppointments = async () => {
     
     const userData = JSON.parse(storedUser)
     console.log('User data from localStorage:', userData)
-    
-    // ดึงข้อมูลการนัดหมายโดยตรงจาก Supabase
+
     const { data, error: fetchError } = await supabaseAdmin
       .from('Appointment')
       .select(`
@@ -79,20 +67,17 @@ const fetchAppointments = async () => {
   }
 }
 
-// ส่งคำขอนัดหมาย
 const handleRequestAppointment = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // ตรวจสอบว่ามีข้อมูลที่จำเป็นครบถ้วนหรือไม่
+
     if (!formData.value.topic) {
       error.value = 'กรุณาระบุหัวข้อการนัดหมาย'
       formLoading.value = false
       return
     }
-    
-    // ดึงข้อมูลผู้ใช้จาก localStorage เพื่อให้แน่ใจว่ามีข้อมูลล่าสุด
+
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       error.value = 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่'
@@ -106,14 +91,11 @@ const handleRequestAppointment = async () => {
       formLoading.value = false
       return
     }
-    
-    // แสดงข้อมูลในคอนโซลเพื่อตรวจสอบ
+
     console.log('User data from localStorage:', userData)
-    
-    // กำหนดเวลาเริ่มต้นและสิ้นสุด (เพิ่ม 1 ชั่วโมงจากเวลาเริ่มต้น)
+
     const startDate = formData.value.preferredDate ? new Date(formData.value.preferredDate) : new Date()
-    
-    // ปรับเวลาตามช่วงเวลาที่เลือก
+
     if (formData.value.preferredTime === 'ช่วงเช้า') {
       startDate.setHours(9, 0, 0, 0)
     } else if (formData.value.preferredTime === 'ช่วงบ่าย') {
@@ -122,9 +104,8 @@ const handleRequestAppointment = async () => {
       startDate.setHours(16, 0, 0, 0)
     }
     
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // เพิ่ม 1 ชั่วโมง
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000)
     
-    // สร้างข้อมูลการนัดหมาย
     const appointmentData = {
       topic: formData.value.topic,
       description: formData.value.description || '',
@@ -133,12 +114,9 @@ const handleRequestAppointment = async () => {
       advisorId: userData.advisorId,
       studentId: userData.id
     }
-    
-    console.log('Sending appointment data:', appointmentData)
-    
-    // สร้างข้อมูลสำหรับส่งไปยัง Supabase
+
     const appointmentRecord = {
-      id: crypto.randomUUID(), // สร้าง UUID สำหรับ id
+      id: crypto.randomUUID(),
       advisorId: appointmentData.advisorId,
       studentId: appointmentData.studentId,
       title: appointmentData.topic,
@@ -149,11 +127,9 @@ const handleRequestAppointment = async () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-    
-    console.log('Appointment record to be inserted:', appointmentRecord)
-    
-    // ส่งคำขอนัดหมายโดยตรงไปยัง Supabase
-    const { data, error: supabaseError } = await supabaseAdmin
+   
+
+    const {error: supabaseError } = await supabaseAdmin
       .from('Appointment')
       .insert([appointmentRecord])
       .select()
@@ -164,24 +140,18 @@ const handleRequestAppointment = async () => {
       formLoading.value = false
       return
     }
-    
-    console.log('Appointment created successfully:', data)
-    
-    // รีเซ็ตฟอร์ม
+
     formData.value = {
       topic: '',
       description: '',
       preferredDate: '',
       preferredTime: ''
     }
-    
-    // ปิด modal
+
     showRequestModal.value = false
-    
-    // โหลดข้อมูลการนัดหมายใหม่
+
     await fetchAppointments()
-    
-    // แสดงข้อความสำเร็จ
+
     alert('ส่งคำขอนัดหมายเรียบร้อยแล้ว')
   } catch (err) {
     console.error('Error requesting appointment:', err)
@@ -191,62 +161,111 @@ const handleRequestAppointment = async () => {
   }
 }
 
-// ดูรายละเอียดการนัดหมาย
-const viewAppointmentDetails = (appointment: Appointment) => {
-  selectedAppointment.value = appointment
-  showDetailsModal.value = true
-}
-
-// ยกเลิกการนัดหมาย
 const cancelAppointment = async (id: string) => {
-  if (confirm('คุณต้องการยกเลิกคำขอนัดหมายนี้ใช่หรือไม่?')) {
-    try {
-      loading.value = true
-      await advisorStore.cancelStudentAppointment(id)
-      await fetchAppointments()
-    } catch (err: any) {
-      error.value = err.message
-    } finally {
-      loading.value = false
-    }
-  }
-}
-
-// ยืนยันการนัดหมาย
-const confirmAppointment = async (appointment: Appointment) => {
   try {
     loading.value = true
     error.value = null
     
-    await advisorStore.confirmStudentAppointment(appointment.id)
+    console.log('Cancelling appointment with ID:', id)
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('Appointment')
+      .delete()
+      .eq('id', id)
     
-    // อัปเดตข้อมูลในหน้าจอ
-    await fetchAppointments()
-    
-    // ถ้ากำลังแสดง modal รายละเอียด ให้ปิด
-    if (showDetailsModal.value) {
-      showDetailsModal.value = false
+    if (deleteError) {
+      console.error('Supabase delete error:', deleteError)
+      throw new Error(`ไม่สามารถยกเลิกการนัดหมายได้: ${deleteError.message}`)
     }
+
+    appointments.value = appointments.value.filter(appointment => appointment.id !== id)
+
+    alert('ยกเลิกการนัดหมายเรียบร้อยแล้ว')
     
-    alert('ยืนยันการนัดหมายเรียบร้อยแล้ว')
   } catch (err: any) {
     error.value = err.message
-    alert('เกิดข้อผิดพลาด: ' + err.message)
+    console.error('Error cancelling appointment:', err)
+    alert(`เกิดข้อผิดพลาด: ${err.message}`)
   } finally {
     loading.value = false
   }
 }
 
-// ยกเลิกการนัดหมายที่เลือก
+const confirmAppointment = async (appointment: Appointment) => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const { error: updateError } = await supabaseAdmin
+      .from('Appointment')
+      .update({
+        status: 'confirmed',
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', appointment.id)
+    
+    if (updateError) {
+      console.error('Supabase update error:', updateError)
+      throw new Error(`ไม่สามารถยืนยันการนัดหมายได้: ${updateError.message}`)
+    }
+
+    const index = appointments.value.findIndex(a => a.id === appointment.id)
+    if (index !== -1) {
+      appointments.value[index].status = 'confirmed'
+      appointments.value[index].updatedAt = new Date().toISOString()
+    }
+
+    alert('ยืนยันการนัดหมายเรียบร้อยแล้ว')
+  } catch (err: any) {
+    error.value = err.message
+    console.error('Error confirming appointment:', err)
+    alert(`เกิดข้อผิดพลาด: ${err.message}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+const rejectAppointment = async (appointment: Appointment) => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const { error: updateError } = await supabaseAdmin
+      .from('Appointment')
+      .update({
+        status: 'cancelled',
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', appointment.id)
+    
+    if (updateError) {
+      console.error('Supabase update error:', updateError)
+      throw new Error(`ไม่สามารถปฏิเสธการนัดหมายได้: ${updateError.message}`)
+    }
+
+    const index = appointments.value.findIndex(a => a.id === appointment.id)
+    if (index !== -1) {
+      appointments.value[index].status = 'cancelled'
+      appointments.value[index].updatedAt = new Date().toISOString()
+    }
+
+    alert('ปฏิเสธการนัดหมายเรียบร้อยแล้ว')
+  } catch (err: any) {
+    error.value = err.message
+    console.error('Error rejecting appointment:', err)
+    alert(`เกิดข้อผิดพลาด: ${err.message}`)
+  } finally {
+    loading.value = false
+  }
+}
+
 const cancelSelectedAppointment = async () => {
   if (!selectedAppointment.value) return
   
   if (confirm('คุณต้องการยกเลิกคำขอนัดหมายนี้ใช่หรือไม่?')) {
     try {
       loading.value = true
-      await advisorStore.cancelStudentAppointment(selectedAppointment.value.id)
-      
-      // ปิด modal และโหลดข้อมูลใหม่
+      await cancelAppointment(selectedAppointment.value.id)
       showDetailsModal.value = false
       await fetchAppointments()
     } catch (err: any) {
@@ -257,7 +276,6 @@ const cancelSelectedAppointment = async () => {
   }
 }
 
-// จัดรูปแบบวันที่และเวลา
 const formatDateTime = (date: Date | string | null | undefined) => {
   if (!date) return 'ไม่ระบุ'
   
@@ -274,15 +292,45 @@ const formatDateTime = (date: Date | string | null | undefined) => {
   }).format(dateObj)
 }
 
-// แปลงสถานะเป็นข้อความภาษาไทย
+const formatDateTimeRange = (date: Date | string | null | undefined, status: string) => {
+  if (!date) return 'ไม่ระบุ'
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : new Date(date)
+
+  const thaiTime = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000) // เพิ่ม 7 ชั่วโมง
+
+  const dateFormatter = new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    calendar: 'buddhist'
+  })
+
+  const timeFormatter = new Intl.DateTimeFormat('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+  
+  const formattedDate = dateFormatter.format(thaiTime)
+  const formattedStartTime = timeFormatter.format(thaiTime)
+
+  if (status === 'pending') {
+    const endTime = new Date(thaiTime.getTime() + 3 * 60 * 60 * 1000)
+    const formattedEndTime = timeFormatter.format(endTime)
+    return `${formattedDate} เวลา ${formattedStartTime} - ${formattedEndTime} น.`
+  } else {
+    return `${formattedDate} เวลา ${formattedStartTime} น.`
+  }
+}
+
 const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
       return 'รอดำเนินการ'
     case 'scheduled':
-      return 'กำหนดการแล้ว'
+      return 'อาจารย์ยืนยันกำหนดการ'
     case 'confirmed':
-      return 'นักศึกษายืนยันแล้ว'
+      return 'ยืนยัน'
     case 'cancelled':
       return 'ยกเลิกแล้ว'
     default:
@@ -290,7 +338,6 @@ const getStatusText = (status: string) => {
   }
 }
 
-// แปลงช่วงเวลาเป็นข้อความภาษาไทย
 const getPreferredTimeText = (time: string | null | undefined) => {
   if (!time) return ''
   
@@ -306,7 +353,6 @@ const getPreferredTimeText = (time: string | null | undefined) => {
   }
 }
 
-// แปลงสถานะเป็นคลาส CSS
 const getStatusClass = (status: string | undefined) => {
   if (!status) return ''
   
@@ -324,7 +370,6 @@ const getStatusClass = (status: string | undefined) => {
   }
 }
 
-// Modal แสดงรายละเอียดการนัดหมาย
 const showDetailsModal = ref(false)
 
 onMounted(async () => {
@@ -346,8 +391,7 @@ onMounted(async () => {
         ขอนัดหมายใหม่
       </button>
     </div>
-    
-    <!-- รายการการนัดหมาย -->
+   
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -358,82 +402,47 @@ onMounted(async () => {
       </div>
       
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                หัวข้อ
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                วันที่ขอนัดหมาย
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                วันที่นัดหมาย
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สถานที่
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                สถานะ
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                จัดการ
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="appointment in appointments" :key="appointment.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ appointment.topic }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ formatDateTime(appointment.requestDate) }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div v-if="appointment.appointmentDate" class="text-sm text-gray-900">
-                  {{ formatDateTime(appointment.appointmentDate) }}
-                </div>
-                <div v-else class="text-sm text-gray-500">รอการยืนยัน</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">{{ appointment.location || '-' }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getStatusClass(appointment.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                  {{ getStatusText(appointment.status) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div class="flex space-x-2">
-                  <button 
-                    @click="viewAppointmentDetails(appointment)" 
-                    class="text-indigo-600 hover:text-indigo-900"
-                  >
-                    รายละเอียด
-                  </button>
-                  <button 
-                    v-if="appointment.status === 'pending' && !appointment.appointmentDate"
-                    @click="cancelAppointment(appointment.id)" 
-                    class="text-red-600 hover:text-red-900"
-                  >
-                    ยกเลิก
-                  </button>
-                  <button 
-                    v-if="appointment.status === 'pending' && appointment.appointmentDate"
-                    @click="confirmAppointment(appointment)" 
-                    class="text-green-600 hover:text-green-900"
-                  >
-                    ยืนยัน
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-for="appointment in appointments" :key="appointment.id" class="bg-white shadow overflow-hidden sm:rounded-lg mb-4">
+          <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+            <div>
+              <h3 class="text-lg leading-6 font-medium text-gray-900">
+                {{ appointment.title }}
+              </h3>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                วันที่นัดหมาย: {{ formatDateTimeRange(appointment.startTime, appointment.status) }}
+              </p>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                สถานะ: {{ getStatusText(appointment.status) }}
+              </p>
+            </div>
+            <div class="flex space-x-2">
+              <button 
+                v-if="appointment.status === 'pending'"
+                @click="cancelAppointment(appointment.id)" 
+                class="text-red-600 hover:text-red-900"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                v-if="appointment.status === 'scheduled'"
+                @click="confirmAppointment(appointment)" 
+                class="text-green-600 hover:text-green-900"
+              >
+                ยืนยัน
+              </button>
+              <button 
+                v-if="appointment.status === 'scheduled'"
+                @click="rejectAppointment(appointment)" 
+                class="text-red-600 hover:text-red-900"
+              >
+                ปฏิเสธ
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <!-- Modal ขอนัดหมายใหม่ -->
+
     <div v-if="showRequestModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showRequestModal = false"></div>
@@ -552,8 +561,6 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    
-    <!-- Modal แสดงรายละเอียดการนัดหมาย -->
     <div v-if="showDetailsModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showDetailsModal = false"></div>
@@ -641,6 +648,12 @@ onMounted(async () => {
                               class="bg-yellow-50 px-2 py-1.5 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600"
                             >
                               ยืนยันการนัดหมาย
+                            </button>
+                            <button 
+                              @click="rejectAppointment(selectedAppointment)" 
+                              class="bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
+                            >
+                              ปฏิเสธการนัดหมาย
                             </button>
                           </div>
                         </div>

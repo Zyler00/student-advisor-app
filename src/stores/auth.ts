@@ -4,11 +4,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { User } from '../types'
 
-// ฟังก์ชันสำหรับแปลงข้อมูลจาก Supabase ให้ตรงกับ Type ที่กำหนด
 const mapSupabaseUserToUser = (data: any): User => ({
   id: data.id,
   username: data.username,
-  password: data.password, // เก็บรหัสผ่านไว้สำหรับการเข้าสู่ระบบอัตโนมัติ
+  password: data.password,
   role: data.role as 'admin' | 'advisor' | 'student',
   firstName: data.firstName,
   lastName: data.lastName,
@@ -29,12 +28,10 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // เริ่มต้นการตรวจสอบสถานะการเข้าสู่ระบบ
   const initAuth = async () => {
     try {
       loading.value = true
-      
-      // ทดสอบการเชื่อมต่อกับ Supabase
+
       const { data: tableInfo, error: tableError } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -45,8 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         console.log('User table structure:', tableInfo)
       }
-      
-      // ตรวจสอบข้อมูลใน localStorage ก่อน
+
       const storedUser = localStorage.getItem('user')
       if (storedUser) {
         try {
@@ -57,12 +53,10 @@ export const useAuthStore = defineStore('auth', () => {
           localStorage.removeItem('user')
         }
       }
-      
-      // ตรวจสอบเซสชันจาก Supabase
+
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session) {
-        // ดึงข้อมูลผู้ใช้จาก Supabase
         const { data, error } = await supabaseAdmin
           .from('User')
           .select('*')
@@ -71,18 +65,14 @@ export const useAuthStore = defineStore('auth', () => {
         
         if (error) {
           console.warn('ไม่สามารถดึงข้อมูลผู้ใช้จาก Supabase ได้:', error.message)
-          // ถ้าไม่สามารถดึงข้อมูลจาก Supabase ได้ แต่มีข้อมูลใน localStorage แล้ว ก็ใช้ข้อมูลจาก localStorage ต่อไป
           if (!user.value) {
             throw new Error('ไม่สามารถดึงข้อมูลผู้ใช้ได้')
           }
         } else if (data) {
-          // แปลงข้อมูลให้ตรงกับ Type ที่กำหนด
           user.value = mapSupabaseUserToUser(data)
-          // อัปเดตข้อมูลใน localStorage
           localStorage.setItem('user', JSON.stringify(user.value))
         }
       } else {
-        // ถ้าไม่มีเซสชัน และไม่มีข้อมูลผู้ใช้ใน localStorage ให้ล้างข้อมูลผู้ใช้
         if (!user.value) {
           user.value = null
           localStorage.removeItem('user')
@@ -96,19 +86,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // เข้าสู่ระบบ
   const login = async (username: string, password: string) => {
     try {
       loading.value = true
       error.value = null
       
       console.log('Attempting to login with username:', username)
-      
-      // ตรวจสอบว่าเป็น admin หรือไม่
+
       if (username === 'admin' && password === 'admin') {
         console.log('Admin login detected')
-        
-        // ดึงข้อมูล admin จากฐานข้อมูล
+
         const { data: adminData, error: adminError } = await supabaseAdmin
           .from('User')
           .select('*')
@@ -121,11 +108,9 @@ export const useAuthStore = defineStore('auth', () => {
         }
         
         const adminUser = mapSupabaseUserToUser(adminData)
-        
-        // เก็บข้อมูลผู้ใช้ในสโตร์
+
         user.value = adminUser
-        
-        // เก็บข้อมูลผู้ใช้ใน localStorage พร้อมรหัสผ่าน (สำหรับใช้ re-login อัตโนมัติ)
+
         const userWithPassword = {
           ...adminUser,
           password: password
@@ -135,11 +120,10 @@ export const useAuthStore = defineStore('auth', () => {
         return adminUser
       }
       
-      // ค้นหาผู้ใช้จาก username โดยตรง
       const { data: usernameData, error: usernameError } = await supabaseAdmin
         .from('User')
         .select('*')
-        .ilike('username', username) // ใช้ ilike แทน eq เพื่อไม่สนใจตัวพิมพ์ใหญ่-เล็ก
+        .ilike('username', username)
       
       console.log('Username search result:', usernameData, usernameError)
       
@@ -148,13 +132,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (usernameData && usernameData.length > 0) {
         userData = usernameData[0]
       }
-      
-      // ถ้าไม่พบจาก username ให้ลองค้นหาจาก email
+
       if (!userData) {
         const { data: emailData, error: emailError } = await supabaseAdmin
           .from('User')
           .select('*')
-          .ilike('email', username) // ใช้ ilike แทน eq เพื่อไม่สนใจตัวพิมพ์ใหญ่-เล็ก
+          .ilike('email', username)
         
         console.log('Email search result:', emailData, emailError)
         
@@ -168,36 +151,29 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       console.log('Found user:', userData)
-      
-      // ตรวจสอบรหัสผ่าน
+
       if (userData.password !== password) {
         throw new Error('รหัสผ่านไม่ถูกต้อง')
       }
-      
-      // แปลงข้อมูลให้ตรงกับ Type ที่กำหนด
+
       const userWithCorrectType = mapSupabaseUserToUser(userData)
-      
-      // เก็บข้อมูลผู้ใช้ในสโตร์
+
       user.value = userWithCorrectType
-      
-      // เก็บข้อมูลผู้ใช้ใน localStorage พร้อมรหัสผ่าน (สำหรับใช้ re-login อัตโนมัติ)
+
       const userWithPassword = {
         ...userWithCorrectType,
         password: password
       }
       localStorage.setItem('user', JSON.stringify(userWithPassword))
-      
-      // สร้าง session ใน Supabase Auth
+
       try {
         let email = userWithCorrectType.email
-        
-        // ถ้าไม่มี email ให้ใช้ username แทน (เพื่อให้ Supabase Auth ทำงานได้)
+
         if (!email) {
           console.log('User has no email, using username as email')
           email = userWithCorrectType.username + '@example.com'
         }
-        
-        // ใช้ email และ password สำหรับ sign in
+ 
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: email,
           password: password
@@ -205,8 +181,7 @@ export const useAuthStore = defineStore('auth', () => {
         
         if (signInError) {
           console.warn('Could not create Supabase session:', signInError)
-          
-          // ถ้าไม่สามารถ sign in ได้ ให้ลองลงทะเบียนก่อน
+
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: email,
             password: password,
@@ -242,14 +217,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // ออกจากระบบ
   const logout = async () => {
     try {
       loading.value = true
       error.value = null
       
       try {
-        // พยายามออกจากระบบด้วย Supabase Auth
         const { error: err } = await supabase.auth.signOut()
         
         if (err) {
@@ -258,8 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
       } catch (authError) {
         console.warn('ไม่สามารถใช้ Supabase Auth:', authError)
       }
-      
-      // ล้างข้อมูลผู้ใช้และลบจาก localStorage
+
       user.value = null
       localStorage.removeItem('user')
     } catch (err: any) {
@@ -270,13 +242,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // ลงทะเบียนนักศึกษา
   const registerStudent = async (studentData: Partial<User>) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่าชื่อผู้ใช้ (รหัสนักศึกษา) มีอยู่แล้วหรือไม่
+
       const { data: existingUser, error: checkError } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -291,13 +261,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (existingUser) {
         throw new Error('รหัสนักศึกษานี้มีอยู่ในระบบแล้ว')
       }
-      
-      // สร้าง UUID สำหรับผู้ใช้ใหม่
+
       const userId = crypto.randomUUID()
       
-      // สร้างข้อมูลนักศึกษาใหม่
       const newStudent = {
-        id: userId, // กำหนด id ด้วย UUID
+        id: userId,
         ...studentData,
         role: 'student',
         createdAt: new Date().toISOString(),
@@ -305,8 +273,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       console.log('Saving new student:', newStudent)
-      
-      // บันทึกข้อมูลลงใน Supabase โดยตรง
+
       const { data, error: insertError } = await supabaseAdmin
         .from('User')
         .insert([newStudent])
@@ -320,8 +287,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (!data || data.length === 0) {
         throw new Error('ไม่สามารถลงทะเบียนได้: ไม่ได้รับข้อมูลตอบกลับจากเซิร์ฟเวอร์')
       }
-      
-      // ลงทะเบียนผู้ใช้ใน Supabase Auth
+
       const { error: signUpError } = await supabase.auth.signUp({
         email: newStudent.email || `${newStudent.username}@example.com`,
         password: newStudent.password || '',
@@ -335,8 +301,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (signUpError) {
         throw new Error('ไม่สามารถสร้างบัญชีผู้ใช้ได้: ' + signUpError.message)
       }
-      
-      // แปลงข้อมูลให้ตรงกับ Type ที่กำหนด
+
       const userWithCorrectType = mapSupabaseUserToUser(data[0])
       
       return userWithCorrectType
@@ -349,12 +314,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // ดึงข้อมูลโปรไฟล์ผู้ใช้
   const fetchUserProfile = async () => {
     try {
       loading.value = true
-      
-      // ตรวจสอบข้อมูลใน localStorage ก่อน
+
       const storedUser = localStorage.getItem('user')
       if (storedUser) {
         try {
@@ -365,19 +328,16 @@ export const useAuthStore = defineStore('auth', () => {
           localStorage.removeItem('user')
         }
       }
-      
-      // ดึงข้อมูลเซสชันปัจจุบัน
+
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {
-        // ถ้าไม่มีเซสชัน แต่มีข้อมูลผู้ใช้ใน localStorage ให้ใช้ข้อมูลจาก localStorage
         if (user.value) {
           return user.value
         }
         throw new Error('ไม่พบเซสชันผู้ใช้')
       }
-      
-      // ดึงข้อมูลผู้ใช้จาก Supabase
+
       const { data, error } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -385,7 +345,6 @@ export const useAuthStore = defineStore('auth', () => {
         .single()
       
       if (error) {
-        // ถ้าไม่สามารถดึงข้อมูลจาก Supabase ได้ แต่มีข้อมูลใน localStorage ให้ใช้ข้อมูลจาก localStorage
         if (user.value) {
           console.warn('ไม่สามารถดึงข้อมูลจาก Supabase ได้ ใช้ข้อมูลจาก localStorage แทน')
           return user.value
@@ -394,10 +353,8 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       if (data) {
-        // แปลงข้อมูลให้ตรงกับ Type ที่กำหนด
         const userWithCorrectType = mapSupabaseUserToUser(data)
         user.value = userWithCorrectType
-        // อัปเดตข้อมูลใน localStorage
         localStorage.setItem('user', JSON.stringify(userWithCorrectType))
         return userWithCorrectType
       }
@@ -412,7 +369,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // อัปเดตข้อมูลโปรไฟล์ผู้ใช้
   const updateUserProfile = async (userData: Partial<User>) => {
     try {
       loading.value = true
@@ -421,8 +377,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (!user.value || !user.value.id) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // อัปเดตข้อมูลผู้ใช้ใน Supabase
+
       const { data, error: updateError } = await supabaseAdmin
         .from('User')
         .update(userData)
@@ -437,14 +392,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (!data) {
         throw new Error('ไม่พบข้อมูลผู้ใช้หลังการอัปเดต')
       }
-      
-      // แปลงข้อมูลให้ตรงกับ Type ที่กำหนด
+
       const userWithCorrectType = mapSupabaseUserToUser(data)
-      
-      // อัปเดตข้อมูลผู้ใช้ในสโตร์
+
       user.value = userWithCorrectType
-      
-      // อัปเดตข้อมูลผู้ใช้ใน localStorage
+ 
       localStorage.setItem('user', JSON.stringify(userWithCorrectType))
       
       return userWithCorrectType

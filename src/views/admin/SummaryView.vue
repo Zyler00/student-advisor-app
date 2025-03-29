@@ -11,7 +11,6 @@
       </div>
       
       <div v-else>
-        <!-- สรุปข้อมูลอาจารย์ที่ปรึกษา -->
         <div class="px-4 py-5 sm:px-6">
           <h4 class="text-md font-medium text-gray-900">รายการอาจารย์ที่ปรึกษา</h4>
         </div>
@@ -28,9 +27,6 @@
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ภาควิชา
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  จำนวนนักศึกษาในที่ปรึกษา
                 </th>
               </tr>
             </thead>
@@ -58,15 +54,10 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm text-gray-900">{{ advisor.department }}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{{ getStudentCount(advisor.id) }}</div>
-                </td>
               </tr>
             </tbody>
           </table>
         </div>
-        
-        <!-- Pagination -->
         <div class="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div class="flex-1 flex justify-between sm:hidden">
             <button 
@@ -104,7 +95,6 @@
                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <span class="sr-only">ก่อนหน้า</span>
-                  <!-- Heroicon name: solid/chevron-left -->
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                   </svg>
@@ -126,7 +116,6 @@
                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <span class="sr-only">ถัดไป</span>
-                  <!-- Heroicon name: solid/chevron-right -->
                   <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                   </svg>
@@ -135,13 +124,11 @@
             </div>
           </div>
         </div>
-        
-        <!-- สรุปข้อมูลการนัดหมาย -->
         <div class="px-4 py-5 sm:px-6 mt-8">
           <h4 class="text-md font-medium text-gray-900">สรุปการนัดหมาย</h4>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 px-4 py-5 sm:px-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 px-4 py-5 sm:px-6">
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
               <dl>
@@ -156,6 +143,15 @@
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">รอการยืนยัน</dt>
                 <dd class="mt-1 text-3xl font-semibold text-yellow-500">{{ appointmentSummary.pending }}</dd>
+              </dl>
+            </div>
+          </div>
+          
+          <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">อาจารย์ยืนยันกำหนดการ</dt>
+                <dd class="mt-1 text-3xl font-semibold text-blue-500">{{ appointmentSummary.scheduled }}</dd>
               </dl>
             </div>
           </div>
@@ -209,10 +205,10 @@
                   <div class="text-sm text-gray-900">{{ getStudentName(appointment.studentId) }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{{ appointment.topic }}</div>
+                  <div class="text-sm text-gray-900">{{ appointment.topic || appointment.title }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{{ formatDate(appointment.appointmentDate) }}</div>
+                  <div class="text-sm text-gray-900">{{ formatDate(appointment.appointmentDate || appointment.startTime) }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span :class="getStatusClass(appointment.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
@@ -242,16 +238,13 @@ const appointments = ref<Appointment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-// ตัวแปรสำหรับการแคช
 const advisorMap = ref<Map<string, User>>(new Map())
 const studentMap = ref<Map<string, User>>(new Map())
 const studentCountMap = ref<Map<string, number>>(new Map())
 
-// ตัวแปรสำหรับการแบ่งหน้า
 const currentPage = ref(1)
 const pageSize = ref(5)
 
-// ตัวแปรสำหรับสรุปการนัดหมาย
 const appointmentSummary = ref({
   total: 0,
   pending: 0,
@@ -260,10 +253,8 @@ const appointmentSummary = ref({
   cancelled: 0
 })
 
-// คำนวณจำนวนหน้าทั้งหมด
 const totalPages = computed(() => Math.ceil(advisors.value.length / pageSize.value))
 
-// คำนวณหน้าที่จะแสดง
 const displayedPages = computed(() => {
   const pages = []
   const maxPagesToShow = 5
@@ -282,39 +273,45 @@ const displayedPages = computed(() => {
   return pages
 })
 
-// คำนวณรายการอาจารย์ที่จะแสดงในหน้าปัจจุบัน
 const paginatedAdvisors = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
   return advisors.value.slice(start, end)
 })
 
-// คำนวณรายการการนัดหมายล่าสุด
 const recentAppointments = computed(() => {
-  return appointments.value.slice(0, 10) // แสดงเพียง 10 รายการล่าสุด
+  return appointments.value
 })
 
 onMounted(async () => {
-  await Promise.all([fetchAdvisors(), fetchStudents(), fetchRelations(), fetchAppointments()])
-  calculateStudentCounts()
-  calculateAppointmentSummary()
+  loading.value = true
+  try {
+    await fetchAdvisors()
+    await fetchStudents()
+    await fetchRelations()
+    await fetchAppointments()
+    calculateStudentCounts()
+    calculateAppointmentSummary()
+    console.log('จำนวนการนัดหมายที่ดึงมาได้:', appointments.value.length)
+    console.log('สรุปการนัดหมาย:', appointmentSummary.value)
+  } catch (err) {
+    console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', err)
+  } finally {
+    loading.value = false
+  }
 })
 
 const fetchAdvisors = async () => {
   try {
-    loading.value = true
     const data = await advisorStore.fetchAdvisors()
     advisors.value = data as User[]
-    
-    // สร้าง map ของอาจารย์
+
     advisorMap.value = new Map()
     advisors.value.forEach(advisor => {
       advisorMap.value.set(advisor.id, advisor)
     })
   } catch (err: any) {
     error.value = err.message
-  } finally {
-    loading.value = false
   }
 }
 
@@ -322,8 +319,7 @@ const fetchStudents = async () => {
   try {
     const data = await advisorStore.fetchStudents()
     students.value = data as User[]
-    
-    // สร้าง map ของนักศึกษา
+
     studentMap.value = new Map()
     students.value.forEach(student => {
       studentMap.value.set(student.id, student)
@@ -353,8 +349,7 @@ const fetchAppointments = async () => {
 
 const calculateStudentCounts = () => {
   studentCountMap.value = new Map()
-  
-  // นับจำนวนนักศึกษาของแต่ละอาจารย์
+
   relations.value.forEach(relation => {
     const count = studentCountMap.value.get(relation.advisorId) || 0
     studentCountMap.value.set(relation.advisorId, count + 1)
@@ -362,6 +357,8 @@ const calculateStudentCounts = () => {
 }
 
 const calculateAppointmentSummary = () => {
+  console.log('กำลังคำนวณสรุปการนัดหมาย จากข้อมูลทั้งหมด:', appointments.value.length, 'รายการ')
+  
   appointmentSummary.value = {
     total: appointments.value.length,
     pending: appointments.value.filter(a => a.status === 'pending').length,
@@ -369,6 +366,8 @@ const calculateAppointmentSummary = () => {
     confirmed: appointments.value.filter(a => a.status === 'confirmed').length,
     cancelled: appointments.value.filter(a => a.status === 'cancelled').length
   }
+  
+  console.log('สรุปการนัดหมายที่คำนวณได้:', appointmentSummary.value)
 }
 
 const getStudentCount = (advisorId: string) => {
@@ -389,15 +388,20 @@ const getStudentName = (studentId: string) => {
   return `${student.firstName} ${student.lastName}`
 }
 
-const formatDate = (date?: Date) => {
+const formatDate = (date: string | Date | null | undefined) => {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString('th-TH', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  try {
+    return new Date(date).toLocaleDateString('th-TH', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (err) {
+    console.error('เกิดข้อผิดพลาดในการแปลงวันที่:', err, date)
+    return '-'
+  }
 }
 
 const getStatusClass = (status: string) => {
@@ -430,7 +434,6 @@ const getStatusText = (status: string) => {
   }
 }
 
-// ฟังก์ชันสำหรับการแบ่งหน้า
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
@@ -445,10 +448,5 @@ const nextPage = () => {
 
 const goToPage = (page: number) => {
   currentPage.value = page
-}
-
-// ฟังก์ชันสำหรับการเปิด URL
-const openUrl = (url: string) => {
-  window.open(url, '_blank')
 }
 </script>

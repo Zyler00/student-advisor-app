@@ -143,7 +143,6 @@
             class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
           >
             <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <!-- ไอคอนโหลด -->
               <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -208,10 +207,9 @@ const handleRegister = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // สร้างข้อมูลนักศึกษาใหม่
+
     const newStudent = {
-      username: formData.value.studentId, // ใช้รหัสนักศึกษาเป็นชื่อผู้ใช้
+      username: formData.value.studentId,
       password: formData.value.password,
       firstName: formData.value.firstName,
       lastName: formData.value.lastName,
@@ -219,33 +217,27 @@ const handleRegister = async () => {
       email: formData.value.email,
       phone: formData.value.phone,
       studentId: formData.value.studentId,
-      role: 'student' as const // กำหนดประเภทให้ถูกต้องตาม User interface
+      role: 'student' as const 
     }
-    
-    // ลงทะเบียนผู้ใช้ใหม่
+
     const registeredUser = await authStore.registerStudent(newStudent)
-    
-    // ถ้ามีการอัปโหลดรูปภาพ ให้อัปโหลดไปยัง Supabase Storage
+
     if (formData.value.profileImage && registeredUser) {
       try {
-        // อัปโหลดรูปภาพไปยัง Supabase Storage
         const profileImageUrl = await storageService.uploadProfileImage(
           formData.value.profileImage,
           registeredUser.id
         )
         
-        // อัปเดตข้อมูลผู้ใช้ด้วย URL ของรูปภาพ
         await authStore.updateUserProfile({
           id: registeredUser.id,
           profileImage: profileImageUrl
         })
       } catch (uploadError) {
         console.error('ไม่สามารถอัปโหลดรูปภาพได้:', uploadError)
-        // ถ้าอัปโหลดไม่สำเร็จ ก็ไม่เป็นไร ผู้ใช้สามารถอัปโหลดรูปภาพได้ในภายหลัง
       }
     }
-    
-    // นำทางไปยังหน้าล็อกอิน
+
     router.push('/login')
   } catch (err: any) {
     error.value = err.message || 'เกิดข้อผิดพลาดในการลงทะเบียน'

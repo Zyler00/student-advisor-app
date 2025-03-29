@@ -108,7 +108,6 @@ const advisorStore = useAdvisorStore()
 const loading = ref(true)
 const searchQuery = ref('')
 
-// ดึงข้อมูลนักศึกษาเมื่อโหลดหน้า
 onMounted(async () => {
   try {
     await advisorStore.fetchAdvisorStudents()
@@ -120,7 +119,6 @@ onMounted(async () => {
   }
 })
 
-// กรองนักศึกษาตามคำค้นหา
 const filteredStudents = computed(() => {
   if (!searchQuery.value) return advisorStore.advisorStudents
   
@@ -133,7 +131,6 @@ const filteredStudents = computed(() => {
   )
 })
 
-// สร้างตัวย่อชื่อสำหรับแสดงในกรณีที่ไม่มีรูปภาพ
 const getInitials = (user: User) => {
   return (user.firstName.charAt(0) + user.lastName.charAt(0)).toUpperCase()
 }

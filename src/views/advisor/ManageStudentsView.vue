@@ -22,8 +22,6 @@
         </div>
       </div>
     </div>
-    
-    <!-- รายการนักศึกษา -->
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -148,14 +146,12 @@ const fetchStudents = async () => {
 
 const handleSearch = () => {
   if (!searchQuery.value.trim()) {
-    // ถ้าไม่มีคำค้นหา ให้แสดงนักศึกษาทั้งหมด
     fetchStudents()
     return
   }
   
   const query = searchQuery.value.toLowerCase().trim()
-  
-  // กรองนักศึกษาตามคำค้นหา
+
   students.value = students.value.filter(student => 
     (student.studentId && student.studentId.toLowerCase().includes(query)) ||
     (student.firstName && student.firstName.toLowerCase().includes(query)) ||

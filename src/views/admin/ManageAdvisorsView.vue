@@ -12,8 +12,7 @@
         เพิ่มอาจารย์
       </button>
     </div>
-    
-    <!-- รายการอาจารย์ -->
+
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -96,8 +95,7 @@
         </table>
       </div>
     </div>
-    
-    <!-- Modal เพิ่มอาจารย์ -->
+
     <div v-if="showAddModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showAddModal = false"></div>

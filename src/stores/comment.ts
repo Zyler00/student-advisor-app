@@ -8,7 +8,6 @@ export const useCommentStore = defineStore('comment', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // ดึงข้อมูลความคิดเห็นของนักศึกษา
   const fetchComments = async (studentId: string) => {
     try {
       loading.value = true
@@ -34,7 +33,6 @@ export const useCommentStore = defineStore('comment', () => {
     }
   }
 
-  // สร้างความคิดเห็นใหม่
   const createComment = async (commentData: Partial<Comment>) => {
     try {
       loading.value = true
@@ -67,7 +65,6 @@ export const useCommentStore = defineStore('comment', () => {
     }
   }
 
-  // ลบความคิดเห็น
   const deleteComment = async (commentId: string) => {
     try {
       loading.value = true
@@ -81,8 +78,7 @@ export const useCommentStore = defineStore('comment', () => {
       if (err) {
         throw new Error('ไม่สามารถลบความคิดเห็นได้: ' + err.message)
       }
-      
-      // อัปเดต state หลังจากลบสำเร็จ
+
       comments.value = comments.value.filter(comment => comment.id !== commentId)
       
       return true

@@ -4,7 +4,6 @@ import { randomUUID } from 'crypto'
 const prisma = new PrismaClient()
 
 async function main() {
-  // ตรวจสอบว่ามี admin อยู่แล้วหรือไม่
   const existingAdmin = await prisma.user.findFirst({
     where: {
       role: 'admin',
@@ -13,13 +12,12 @@ async function main() {
   })
 
   if (!existingAdmin) {
-    // สร้าง admin account
     const admin = await prisma.user.create({
       data: {
         id: randomUUID(),
         username: 'admin',
         email: 'admin@example.com',
-        password: 'admin123', // ในระบบจริงควรเข้ารหัสรหัสผ่าน
+        password: 'admin123',
         firstName: 'ผู้ดูแล',
         lastName: 'ระบบ',
         role: 'admin',
@@ -31,8 +29,6 @@ async function main() {
   } else {
     console.log('Admin account already exists')
   }
-
-  // สร้างข้อมูลทดสอบอื่นๆ ตามต้องการ
 }
 
 main()

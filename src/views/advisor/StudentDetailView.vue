@@ -22,7 +22,6 @@
     </div>
 
     <div v-else-if="student" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- ข้อมูลนักศึกษา -->
       <div class="md:col-span-1">
         <div class="bg-white shadow rounded-lg p-6">
           <div class="flex flex-col items-center">
@@ -51,8 +50,6 @@
           </div>
         </div>
       </div>
-
-      <!-- การสนทนาและบันทึก -->
       <div class="md:col-span-2">
         <div class="bg-white shadow rounded-lg p-6 mb-6">
           <h3 class="text-lg font-semibold mb-4">การสนทนา</h3>
@@ -81,8 +78,6 @@
               <p class="text-black">{{ comment.content }}</p>
             </div>
           </div>
-
-          <!-- ฟอร์มส่งข้อความ -->
           <div class="mt-4">
             <form @submit.prevent="submitComment">
               <div class="flex flex-col space-y-2">
@@ -135,8 +130,7 @@ onMounted(async () => {
       loading.value = false
       return
     }
-    
-    // ดึงข้อมูลนักศึกษา
+
     const studentData = await advisorStore.fetchStudentById(studentId.value)
     if (!studentData) {
       error.value = 'ไม่พบข้อมูลนักศึกษา'
@@ -145,8 +139,7 @@ onMounted(async () => {
     }
     
     student.value = studentData
-    
-    // ดึงข้อมูลการสนทนา
+
     await fetchComments()
   } catch (err) {
     console.error('Error loading student details:', err)
@@ -193,8 +186,7 @@ const submitComment = async () => {
       content: commentContent.value,
       isAdvisorComment: true
     })
-    
-    // รีเซ็ตฟอร์มและโหลดคอมเมนต์ใหม่
+
     commentContent.value = ''
     await fetchComments()
   } catch (err) {

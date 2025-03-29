@@ -14,7 +14,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // ดึงข้อมูลอาจารย์ทั้งหมด
   const fetchAdvisors = async () => {
     try {
       loading.value = true
@@ -40,13 +39,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // สร้างอาจารย์ใหม่
   const createAdvisor = async (advisor: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่
       const { data: existingUser, error: checkError } = await supabaseAdmin
         .from('User')
         .select('id')
@@ -60,8 +56,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (existingUser) {
         throw new Error('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น')
       }
-      
-      // สร้าง UUID แบบง่าย
+
       const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
           const r = Math.random() * 16 | 0, 
@@ -73,7 +68,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       const newAdvisor = {
         id: generateUUID(),
         ...advisor,
-        role: 'advisor', // กำหนดค่า role เป็น 'advisor' โดยอัตโนมัติ
+        role: 'advisor',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -96,7 +91,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลนักศึกษาทั้งหมด
   const fetchStudents = async () => {
     try {
       loading.value = true
@@ -122,7 +116,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ค้นหานักศึกษา
   const searchStudents = async (query: string) => {
     try {
       loading.value = true
@@ -147,13 +140,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // กำหนดอาจารย์ที่ปรึกษาให้กับนักศึกษา
   const assignAdvisorToStudent = async (advisorId: string, studentId: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // อัปเดตฟิลด์ advisorId ในตาราง users สำหรับนักศึกษา
       const { data, error: err } = await supabaseAdmin
         .from('User')
         .update({ advisorId })
@@ -173,25 +163,21 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลนักศึกษาที่อยู่ภายใต้การดูแลของอาจารย์ที่ปรึกษา
   const fetchAdvisorStudents = async () => {
     try {
       loading.value = true
-      
-      // ดึงข้อมูลผู้ใช้จาก localStorage
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
       
       const user = JSON.parse(storedUser)
-      
-      // ตรวจสอบว่าผู้ใช้เป็นอาจารย์ที่ปรึกษาหรือไม่
+
       if (user.role !== 'advisor') {
         throw new Error('ผู้ใช้ไม่ใช่อาจารย์ที่ปรึกษา')
       }
-      
-      // ดึงข้อมูลนักศึกษาที่อยู่ภายใต้การดูแลของอาจารย์ที่ปรึกษา
+
       const { data, error: err } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -201,8 +187,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw err
       }
-      
-      // บันทึกข้อมูลนักศึกษาลงในสโตร์
+
       advisorStudents.value = data as User[]
       console.log('Fetched advisor students:', advisorStudents.value)
       
@@ -215,13 +200,11 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ค้นหานักศึกษาของอาจารย์ที่ปรึกษา
   const searchAdvisorStudents = async (query: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ใช้ ID ของผู้ใช้ที่ล็อกอินอยู่ (อาจารย์ที่ปรึกษา)
+
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -229,8 +212,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       }
       
       const advisorId = user.id
-      
-      // ดึงข้อมูลนักศึกษาจาก advisorId
+
       const { data: studentData, error: studentError } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -251,7 +233,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลอาจารย์ตาม ID
   const fetchAdvisorById = async (advisorId: string) => {
     try {
       loading.value = true
@@ -277,13 +258,11 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // อัปโหลดไฟล์ไปยัง Supabase Storage
   const uploadFile = async (file: File, folder: string) => {
     try {
       loading.value = true
       error.value = null
-      
-      // สร้างชื่อไฟล์ที่ไม่ซ้ำกัน
+
       const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
           const r = Math.random() * 16 | 0, 
@@ -295,11 +274,9 @@ export const useAdvisorStore = defineStore('advisor', () => {
       const fileExt = file.name.split('.').pop()
       const fileName = `${generateUUID()}.${fileExt}`
       const filePath = `${folder}/${fileName}`
-      
-      // ใช้ bucket 'files' ที่มีอยู่แล้วใน Supabase
+
       const bucketName = 'files'
-      
-      // อัปโหลดไฟล์ไปยัง Supabase Storage
+
       const { error: uploadError } = await supabaseAdmin.storage
         .from(bucketName)
         .upload(filePath, file)
@@ -307,8 +284,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (uploadError) {
         throw new Error('ไม่สามารถอัปโหลดไฟล์ได้: ' + uploadError.message)
       }
-      
-      // สร้าง URL สำหรับเข้าถึงไฟล์
+
       const { data: { publicUrl } } = supabaseAdmin.storage
         .from(bucketName)
         .getPublicUrl(filePath)
@@ -325,22 +301,18 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // สร้างประกาศใหม่
   const createAnnouncement = async (announcementData: Partial<Announcement>, file?: File | null) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ดึงข้อมูลผู้ใช้จาก localStorage แทนการใช้ supabase.auth.getUser()
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // แปลงข้อมูลจาก JSON string เป็น object
+
       const user = JSON.parse(storedUser)
-      
-      // สร้าง UUID แบบง่าย
+
       const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
           const r = Math.random() * 16 | 0, 
@@ -349,9 +321,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
         });
       };
       
-      const id = generateUUID();
-      
-      // ถ้ามีไฟล์ให้อัปโหลดก่อน
       let fileInfo = {}
       if (file) {
         const uploadResult = await uploadFile(file, 'announcements')
@@ -392,20 +361,18 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // อัปเดตประกาศ
+
   const updateAnnouncement = async (id: string, announcementData: Partial<Announcement>, file?: File | null) => {
     try {
       loading.value = true
       error.value = null
-      
-      // ถ้ามีไฟล์ใหม่ให้อัปโหลด
+
       let updatedData = { 
         ...announcementData,
-        updatedAt: new Date().toISOString() // เพิ่ม updatedAt ทุกครั้งที่มีการอัปเดต
+        updatedAt: new Date().toISOString()
       }
       
       if (file) {
-        // ใช้ฟังก์ชัน uploadFile เพื่อสร้างไฟล์ใหม่
         const uploadResult = await uploadFile(file, 'announcements')
         updatedData = {
           ...updatedData,
@@ -413,8 +380,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
           fileUrl: uploadResult.fileUrl
         }
       }
-      
-      // อัปเดตข้อมูลใน Supabase
+
       const { data, error: err } = await supabaseAdmin
         .from('Announcement')
         .update(updatedData)
@@ -424,8 +390,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถอัปเดตประกาศได้: ' + err.message)
       }
-      
-      // อัปเดต state
+
       if (data && data.length > 0) {
         const index = announcements.value.findIndex(a => a.id === id)
         if (index !== -1) {
@@ -442,7 +407,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ลบประกาศ
   const deleteAnnouncement = async (id: string) => {
     try {
       loading.value = true
@@ -456,8 +420,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถลบประกาศได้: ' + err.message)
       }
-      
-      // อัปเดต state
       announcements.value = announcements.value.filter(a => a.id !== id)
       
       return true
@@ -469,19 +431,16 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลประกาศของอาจารย์
   const fetchAnnouncements = async () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ดึงข้อมูลผู้ใช้จาก localStorage แทนการใช้ supabase.auth.getUser()
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // แปลงข้อมูลจาก JSON string เป็น object
+
       const user = JSON.parse(storedUser)
       
       const { data, error: err } = await supabaseAdmin
@@ -504,21 +463,18 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลประกาศสำหรับนักศึกษา
   const fetchStudentAnnouncements = async () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ใช้ข้อมูลผู้ใช้จาก localStorage
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
       
       const user = JSON.parse(storedUser)
-      
-      // ดึงข้อมูลอาจารย์ที่ปรึกษาของนักศึกษา
+
       const { data: advisorData, error: advisorError } = await supabaseAdmin
         .from('User')
         .select('advisorId')
@@ -532,8 +488,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (!advisorData) {
         return []
       }
-      
-      // ดึงประกาศจากอาจารย์ที่ปรึกษา
+
       const { data, error: err } = await supabaseAdmin
         .from('Announcement')
         .select('*')
@@ -553,12 +508,10 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // สร้างการนัดหมายใหม่ (สำหรับนักศึกษา)
   const requestAppointment = async (appointmentData: Partial<Appointment>) => {
     try {
       console.log('Starting appointment request with data:', appointmentData)
-      
-      // ตรวจสอบข้อมูลที่จำเป็น
+
       if (!appointmentData.topic) {
         throw new Error('กรุณาระบุหัวข้อการนัดหมาย')
       }
@@ -570,8 +523,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (!appointmentData.studentId) {
         throw new Error('ไม่พบข้อมูลนักศึกษา')
       }
-      
-      // ค้นหาข้อมูลอาจารย์ที่ปรึกษา
+
       console.log('Searching for advisor with ID:', appointmentData.advisorId)
       const { data: advisor, error: advisorError } = await supabaseAdmin
         .from('User')
@@ -588,11 +540,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         console.error('Advisor not found with ID:', appointmentData.advisorId)
         throw new Error('ไม่พบข้อมูลอาจารย์ที่ปรึกษา')
       }
-      
-      console.log('Found advisor data:', advisor)
-      
-      // ค้นหาข้อมูลนักศึกษา
-      console.log('Searching for student with ID:', appointmentData.studentId)
+
       const { data: student, error: studentError } = await supabaseAdmin
         .from('User')
         .select('*')
@@ -608,10 +556,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         console.error('Student not found with ID:', appointmentData.studentId)
         throw new Error('ไม่พบข้อมูลนักศึกษา')
       }
-      
-      console.log('Found student data:', student)
-      
-      // สร้างข้อมูลการนัดหมายในรูปแบบ snake_case ตามที่ใช้ใน Supabase
+
       const newAppointment = {
         advisor_id: appointmentData.advisorId,
         student_id: appointmentData.studentId,
@@ -630,8 +575,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       }
       
       console.log('Creating new appointment with data:', newAppointment)
-      
-      // บันทึกข้อมูลการนัดหมายลงในฐานข้อมูล
+
       try {
         const { data: insertData, error: insertError } = await supabaseAdmin
           .from('appointment')
@@ -655,7 +599,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ยืนยันการนัดหมาย (สำหรับอาจารย์)
   const confirmAppointment = async (id: string, appointmentDate: Date, location: string, note?: string) => {
     try {
       loading.value = true
@@ -678,8 +621,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถยืนยันการนัดหมายได้: ' + err.message)
       }
-      
-      // อัปเดต state
+
       if (appointmentResult && appointmentResult.length > 0) {
         const index = appointments.value.findIndex(a => a.id === id)
         if (index !== -1) {
@@ -696,7 +638,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ยกเลิกการนัดหมาย (สำหรับอาจารย์)
   const cancelAppointment = async (id: string) => {
     try {
       loading.value = true
@@ -714,8 +655,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถยกเลิกการนัดหมายได้: ' + err.message)
       }
-      
-      // อัปเดต state
+
       if (appointmentResult && appointmentResult.length > 0) {
         const index = appointments.value.findIndex(a => a.id === id)
         if (index !== -1) {
@@ -732,7 +672,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ยกเลิกการนัดหมาย (สำหรับนักศึกษา)
   const cancelStudentAppointment = async (id: string) => {
     try {
       loading.value = true
@@ -760,7 +699,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ยืนยันการนัดหมาย (สำหรับนักศึกษา)
   const confirmStudentAppointment = async (id: string) => {
     try {
       loading.value = true
@@ -790,13 +728,11 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลการนัดหมายของอาจารย์
   const fetchAppointments = async () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ใช้ ID ของผู้ใช้ที่ล็อกอินอยู่ (อาจารย์)
+  
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -826,13 +762,11 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลการนัดหมายของนักศึกษา
   const fetchStudentAppointments = async () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ใช้ ID ของผู้ใช้ที่ล็อกอินอยู่ (นักศึกษา)
+
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -861,7 +795,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลการนัดหมายทั้งหมด (สำหรับ Admin)
   const fetchAllAppointments = async () => {
     try {
       loading.value = true
@@ -869,18 +802,29 @@ export const useAdvisorStore = defineStore('advisor', () => {
       
       const { data, error: err } = await supabaseAdmin
         .from('Appointment')
-        .select(`
-          *,
-          advisor:advisor_id(id, firstName, lastName, profileImage, department)
-        `)
-        .order('created_at', { ascending: false })
+        .select('*')
+        .order('createdAt', { ascending: false })
       
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลการนัดหมายได้: ' + err.message)
       }
       
-      return data as Appointment[]
+      console.log('ดึงข้อมูลการนัดหมายสำเร็จ:', data)
+
+      const transformedData = data.map((item: any) => {
+        return {
+          ...item,
+          title: item.title || item.topic || 'ไม่มีหัวข้อ',
+          startTime: item.startTime || item.appointmentDate || item.requestDate || new Date(),
+          endTime: item.endTime || new Date(new Date(item.appointmentDate || item.requestDate || new Date()).getTime() + 60 * 60 * 1000)
+        }
+      })
+      
+      console.log('ข้อมูลการนัดหมายหลังแปลง:', transformedData)
+      appointments.value = transformedData as Appointment[]
+      return transformedData as Appointment[]
     } catch (err: any) {
+      console.error('เกิดข้อผิดพลาดในการดึงข้อมูลการนัดหมาย:', err)
       error.value = err.message
       throw err
     } finally {
@@ -888,13 +832,11 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลความสัมพันธ์ระหว่างอาจารย์และนักศึกษาทั้งหมด (สำหรับ Admin)
   const fetchAllRelations = async () => {
     try {
       loading.value = true
       error.value = null
-      
-      // ดึงข้อมูลนักศึกษาที่มี advisorId
+
       const { data, error: err } = await supabaseAdmin
         .from('User')
         .select('id, firstName, lastName, studentId, department, profileImage, advisorId')
@@ -905,8 +847,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถดึงข้อมูลความสัมพันธ์ได้: ' + err.message)
       }
-      
-      // แปลงข้อมูลให้อยู่ในรูปแบบ AdvisorStudentRelation
+ 
       const relations = data.map((student: any) => ({
         id: student.id,
         advisorId: student.advisorId,
@@ -923,7 +864,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // อัปเดตโปรไฟล์อาจารย์
   const updateAdvisorProfile = async (profileData: Partial<User>) => {
     try {
       loading.value = true
@@ -932,15 +872,13 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (!profileData.id) {
         throw new Error('ไม่พบ ID ของอาจารย์')
       }
-      
-      // ตรวจสอบว่ามีการเปลี่ยนอีเมลหรือไม่
+
       if (profileData.email) {
-        // ตรวจสอบว่ามีอีเมลนี้ในระบบแล้วหรือไม่ (ที่ไม่ใช่ของผู้ใช้คนนี้)
         const { data: existingUser, error: checkError } = await supabaseAdmin
           .from('User')
           .select('id')
           .eq('email', profileData.email)
-          .neq('id', profileData.id) // ไม่รวมผู้ใช้คนปัจจุบัน
+          .neq('id', profileData.id)
           .maybeSingle()
         
         if (checkError) {
@@ -962,8 +900,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถอัปเดตข้อมูลอาจารย์ได้: ' + err.message)
       }
-      
-      // อัปเดตข้อมูลในสโตร์
+
       const index = advisors.value.findIndex(advisor => advisor.id === profileData.id)
       if (index !== -1 && data && data.length > 0) {
         advisors.value[index] = { ...advisors.value[index], ...data[0] }
@@ -978,7 +915,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ลบอาจารย์
   const deleteAdvisor = async (advisorId: string) => {
     try {
       loading.value = true
@@ -993,8 +929,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       if (err) {
         throw new Error('ไม่สามารถลบข้อมูลอาจารย์ได้: ' + err.message)
       }
-      
-      // อัปเดตข้อมูลในสโตร์
+
       advisors.value = advisors.value.filter(advisor => advisor.id !== advisorId)
       
       return true
@@ -1006,7 +941,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ดึงข้อมูลนักศึกษาตาม ID
   const fetchStudentById = async (studentId: string) => {
     try {
       loading.value = true
@@ -1030,19 +964,16 @@ export const useAdvisorStore = defineStore('advisor', () => {
       loading.value = false
     }
   }
-  
-  // ดึงข้อมูลการสนทนากับนักศึกษา
+
   const fetchStudentComments = async (studentId: string) => {
     try {
       loading.value = true
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // ดึงข้อมูลความคิดเห็น
+
       const { data, error: err } = await supabaseAdmin
         .from('Comment')
         .select('*')
@@ -1061,23 +992,19 @@ export const useAdvisorStore = defineStore('advisor', () => {
       loading.value = false
     }
   }
-  
-  // เพิ่มความคิดเห็นให้กับนักศึกษา
+
   const addStudentComment = async (commentData: { studentId: string, content: string, isAdvisorComment: boolean }) => {
     try {
       loading.value = true
-      
-      // ตรวจสอบว่ามีการล็อกอินหรือไม่
+
       const storedUser = localStorage.getItem('user')
       if (!storedUser) {
         throw new Error('ไม่พบข้อมูลผู้ใช้')
       }
-      
-      // ดึง ID ของผู้ใช้ปัจจุบัน (อาจารย์)
+
       const user = JSON.parse(storedUser)
       const advisorId = user.id
-      
-      // สร้าง UUID แบบง่าย
+
       const generateUUID = () => {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
           const r = Math.random() * 16 | 0, 
@@ -1087,8 +1014,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       };
       
       const commentId = generateUUID();
-      
-      // แสดงข้อมูลที่จะส่งในคอนโซล
+
       console.log('ข้อมูลที่จะส่ง:', {
         id: commentId,
         advisor_id: advisorId,
@@ -1098,8 +1024,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      
-      // ทดสอบการเชื่อมต่อกับตาราง Comment
+
       console.log('ทดสอบการเข้าถึงตาราง Comment...')
       const { data: testData, error: testError } = await supabaseAdmin
         .from('Comment')
@@ -1111,8 +1036,7 @@ export const useAdvisorStore = defineStore('advisor', () => {
       }
       
       console.log('สามารถเข้าถึงตาราง Comment ได้:', testData)
-      
-      // เพิ่มข้อความลงในตาราง Comment
+
       const { data, error: err } = await supabaseAdmin
         .from('Comment')
         .insert([
@@ -1156,7 +1080,6 @@ export const useAdvisorStore = defineStore('advisor', () => {
     }
   }
 
-  // ตรวจสอบสถานะการเข้าสู่ระบบ
   const checkSession = async () => {
     try {
       console.log('Checking session status')
@@ -1169,15 +1092,12 @@ export const useAdvisorStore = defineStore('advisor', () => {
       
       if (!data.session) {
         console.log('No active session found in Supabase, but using localStorage data')
-        
-        // ถ้าไม่มีเซสชันใน Supabase แต่มีข้อมูลใน localStorage ให้ใช้ข้อมูลจาก localStorage แทน
+
         const storedUser = localStorage.getItem('user')
         if (storedUser) {
           const userData = JSON.parse(storedUser)
           console.log('Using user data from localStorage:', userData.username)
           
-          // ไม่ต้องพยายาม login อีก เพราะอาจทำให้เกิดการวนลูป
-          // แค่ส่งข้อมูลกลับไปใช้งานเลย
           return { 
             data: { 
               session: { user: { id: userData.id } }, 

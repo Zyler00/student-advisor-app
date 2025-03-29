@@ -307,7 +307,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }))
   },
 
@@ -331,7 +334,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }
   },
 
@@ -353,7 +359,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }))
   },
 
@@ -375,7 +384,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }))
   },
 
@@ -385,7 +397,7 @@ export const appointmentService = {
       data: {
         advisorId: appointmentData.advisorId,
         studentId: appointmentData.studentId,
-        title: appointmentData.topic,
+        title: appointmentData.title || appointmentData.topic || '',
         description: appointmentData.description || null,
         status: appointmentData.status,
         location: appointmentData.location || null,
@@ -411,7 +423,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }
   },
 
@@ -422,6 +437,7 @@ export const appointmentService = {
     
     if (appointmentData.advisorId) prismaAppointmentData.advisorId = appointmentData.advisorId
     if (appointmentData.studentId) prismaAppointmentData.studentId = appointmentData.studentId
+    if (appointmentData.title) prismaAppointmentData.title = appointmentData.title
     if (appointmentData.topic) prismaAppointmentData.title = appointmentData.topic
     if (appointmentData.description !== undefined) prismaAppointmentData.description = appointmentData.description || null
     if (appointmentData.status) prismaAppointmentData.status = appointmentData.status
@@ -456,7 +472,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }
   },
 
@@ -478,7 +497,10 @@ export const appointmentService = {
       location: appointment.location || null,
       note: appointment.note || null,
       createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
+      updatedAt: appointment.updatedAt,
+      title: appointment.title,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
     }
   }
 }

@@ -30,10 +30,7 @@
                 {{ appointment.title }}
               </h3>
               <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                วันที่ขอนัดหมาย: {{ formatDate(appointment.startTime) }}
-              </p>
-              <p v-if="appointment.endTime" class="mt-1 max-w-2xl text-sm text-gray-500">
-                วันที่นัดหมาย: {{ formatDateTime(appointment.endTime) }}
+                วันที่นัดหมาย: {{ formatDateTimeRange(appointment.startTime, appointment.status) }}
               </p>
               <p v-if="appointment.preferredDate" class="mt-1 max-w-2xl text-sm text-gray-500">
                 วันที่นักศึกษาต้องการ: {{ formatDate(appointment.preferredDate) }}
@@ -55,10 +52,10 @@
                 {{ getStatusText(appointment.status) }}
               </span>
               <button 
-                @click="editAppointment(appointment)" 
-                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                @click="openUpdateModal(appointment)" 
+                class="text-blue-600 hover:text-blue-900"
               >
-                แก้ไข
+                อัปเดตสถานะ
               </button>
             </div>
           </div>
@@ -93,8 +90,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal สร้างการนัดหมายใหม่ -->
     <div v-if="showCreateModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showCreateModal = false"></div>
@@ -198,114 +193,52 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal แก้ไขการนัดหมาย -->
-    <div v-if="showEditModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showEditModal = false"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form @submit.prevent="updateAppointment">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <div class="sm:flex sm:items-start">
-                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                  <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                    แก้ไขการนัดหมาย
-                  </h3>
-                  <div class="mt-4 space-y-4">
-                    <div>
-                      <label for="edit-student" class="block text-sm font-medium text-gray-700">นักศึกษา</label>
-                      <div class="mt-1 text-sm text-gray-900">
-                        {{ selectedStudentName }}
-                      </div>
-                    </div>
-                    <div>
-                      <label for="edit-title" class="block text-sm font-medium text-gray-700">หัวข้อการนัดหมาย</label>
-                      <input 
-                        type="text" 
-                        id="edit-title" 
-                        v-model="formData.title" 
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label for="edit-description" class="block text-sm font-medium text-gray-700">รายละเอียด</label>
-                      <textarea 
-                        id="edit-description" 
-                        v-model="formData.description" 
-                        rows="3" 
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                      ></textarea>
-                    </div>
-                    <div>
-                      <label for="edit-date" class="block text-sm font-medium text-gray-700">วันที่นัดหมาย</label>
-                      <input 
-                        type="date" 
-                        id="edit-date" 
-                        v-model="formData.startTime" 
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label for="edit-location" class="block text-sm font-medium text-gray-700">สถานที่</label>
-                      <input 
-                        type="text" 
-                        id="edit-location" 
-                        v-model="formData.location" 
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label for="edit-note" class="block text-sm font-medium text-gray-700">บันทึกเพิ่มเติม</label>
-                      <textarea 
-                        id="edit-note" 
-                        v-model="formData.note" 
-                        rows="2" 
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                      ></textarea>
-                    </div>
-                    <div>
-                      <label for="edit-status" class="block text-sm font-medium text-gray-700">สถานะ</label>
-                      <select 
-                        id="edit-status" 
-                        v-model="formData.status" 
-                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        required
-                      >
-                        <option value="pending">รอการยืนยัน</option>
-                        <option value="scheduled">กำหนดการแล้ว</option>
-                        <option value="confirmed">นักศึกษายืนยันแล้ว</option>
-                        <option value="cancelled">ยกเลิก</option>
-                      </select>
-                    </div>
-                    <div v-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                      <span class="block sm:inline">{{ error }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button 
-                type="submit" 
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
-                :disabled="formLoading"
-              >
-                {{ formLoading ? 'กำลังบันทึก...' : 'บันทึก' }}
-              </button>
-              <button 
-                type="button" 
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                @click="showEditModal = false"
-                :disabled="formLoading"
-              >
-                ยกเลิก
-              </button>
-            </div>
-          </form>
+    <div v-if="isUpdateModalOpen" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">อัปเดตการนัดหมาย</h3>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">สถานะ</label>
+          <select 
+            v-model="updateData.status" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="scheduled">อาจารย์ยืนยันกำหนดการ</option>
+            <option value="cancelled">ยกเลิกแล้ว</option>
+          </select>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">วันที่นัดหมาย</label>
+          <input 
+            type="datetime-local" 
+            v-model="updateData.appointmentDate" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">หมายเหตุ</label>
+          <textarea 
+            v-model="updateData.note" 
+            rows="3" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          ></textarea>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button 
+            @click="isUpdateModalOpen = false" 
+            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            ยกเลิก
+          </button>
+          <button 
+            @click="updateAppointment" 
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            บันทึก
+          </button>
         </div>
       </div>
     </div>
@@ -313,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAdvisorStore } from '../../stores/advisor'
 import { supabaseAdmin } from '../../services/supabase'
 import type { Appointment, User } from '../../types'
@@ -321,16 +254,14 @@ import type { Appointment, User } from '../../types'
 const advisorStore = useAdvisorStore()
 const appointments = ref<Appointment[]>([])
 const students = ref<User[]>([])
-const studentData = ref<Record<string, any>>({}) // เพิ่มตัวแปรสำหรับเก็บข้อมูลนักศึกษาแยกตาม ID
+const studentData = ref<Record<string, any>>({}) 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const formLoading = ref(false)
 
-// Modals
 const showCreateModal = ref(false)
-const showEditModal = ref(false)
+const isUpdateModalOpen = ref(false)
 
-// Form data
 const formData = ref({
   id: '',
   studentId: '',
@@ -343,24 +274,13 @@ const formData = ref({
   note: ''
 })
 
-// Selected appointment for edit
 const selectedAppointment = ref<Appointment | null>(null)
 
-// คำนวณชื่อนักศึกษาที่เลือก
-const selectedStudentName = computed(() => {
-  if (!formData.value.studentId) return ''
-  
-  const student = students.value.find(s => s.id === formData.value.studentId)
-  return student ? `${student.firstName} ${student.lastName}` : ''
-})
-
-// ฟังก์ชันสำหรับโหลดข้อมูลการนัดหมาย
 const loadAppointments = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // ตรวจสอบว่ามีผู้ใช้ที่ล็อกอินอยู่หรือไม่
+
     const storedUser = localStorage.getItem('user')
     if (!storedUser) {
       error.value = 'กรุณาเข้าสู่ระบบก่อนดูข้อมูลการนัดหมาย'
@@ -370,8 +290,7 @@ const loadAppointments = async () => {
     
     const userData = JSON.parse(storedUser)
     console.log('User data from localStorage:', userData)
-    
-    // ดึงข้อมูลการนัดหมายโดยตรงจาก Supabase
+
     const { data, error: fetchError } = await supabaseAdmin
       .from('Appointment')
       .select(`
@@ -400,8 +319,7 @@ const loadAppointments = async () => {
     
     console.log('Appointment data fetched:', data)
     appointments.value = data || []
-    
-    // โหลดข้อมูลนักศึกษาสำหรับแต่ละการนัดหมาย
+
     await loadStudentData()
   } catch (err) {
     console.error('Error loading appointments:', err)
@@ -411,10 +329,8 @@ const loadAppointments = async () => {
   }
 }
 
-// ฟังก์ชันสำหรับโหลดข้อมูลนักศึกษา
 const loadStudentData = async () => {
   try {
-    // สร้างเซตของ studentId ที่ไม่ซ้ำกัน
     const uniqueStudentIds = new Set<string>()
     
     appointments.value.forEach(appointment => {
@@ -422,8 +338,7 @@ const loadStudentData = async () => {
         uniqueStudentIds.add(appointment.studentId)
       }
     })
-    
-    // ดึงข้อมูลนักศึกษาแยกต่างหาก
+
     for (const studentId of uniqueStudentIds) {
       try {
         const { data, error } = await supabaseAdmin
@@ -451,38 +366,33 @@ const loadStudentData = async () => {
   }
 }
 
-// ดึงข้อมูลการนัดหมายและนักศึกษาเมื่อโหลดหน้า
 onMounted(async () => {
   await loadAppointments()
   await advisorStore.fetchStudents()
   students.value = advisorStore.students
 })
 
-// สร้างการนัดหมายใหม่
 const createAppointment = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // ส่งข้อมูลไปยัง store
+
     const appointmentData = {
       studentId: formData.value.studentId,
       title: formData.value.title,
       description: formData.value.description,
-      startTime: formData.value.startTime ? new Date(formData.value.startTime) : null,
-      endTime: formData.value.endTime ? new Date(formData.value.endTime) : null,
+      startTime: formData.value.startTime ? new Date(formData.value.startTime) : undefined,
+      endTime: formData.value.endTime ? new Date(formData.value.endTime) : undefined,
       status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
       location: formData.value.location,
       note: formData.value.note
     }
     
     await advisorStore.requestAppointment(appointmentData)
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     resetForm()
     showCreateModal.value = false
-    
-    // โหลดข้อมูลใหม่
+
     await loadAppointments()
   } catch (err: any) {
     error.value = err.message
@@ -491,51 +401,41 @@ const createAppointment = async () => {
   }
 }
 
-// แก้ไขการนัดหมาย
-const editAppointment = (appointment: Appointment) => {
-  selectedAppointment.value = appointment
-  
-  formData.value = {
-    id: appointment.id,
-    studentId: appointment.studentId,
-    title: appointment.title || '',
-    description: appointment.description || '',
-    startTime: appointment.startTime ? new Date(appointment.startTime).toISOString().split('T')[0] : '',
-    endTime: appointment.endTime ? new Date(appointment.endTime).toISOString().split('T')[0] : '',
-    status: appointment.status,
-    location: appointment.location || '',
-    note: appointment.note || ''
-  }
-  
-  showEditModal.value = true
-}
+const updateData = ref({
+  id: '',
+  status: '',
+  appointmentDate: '',
+  note: ''
+})
 
-// อัปเดตการนัดหมาย
 const updateAppointment = async () => {
   try {
     formLoading.value = true
     error.value = null
-    
-    // ส่งข้อมูลไปยัง store
+ 
     const appointmentData = {
-      id: formData.value.id,
-      title: formData.value.title,
-      description: formData.value.description,
-      startTime: formData.value.startTime ? new Date(formData.value.startTime) : null,
-      endTime: formData.value.endTime ? new Date(formData.value.endTime) : null,
-      status: formData.value.status as 'pending' | 'scheduled' | 'confirmed' | 'cancelled',
-      location: formData.value.location,
-      note: formData.value.note
+      id: updateData.value.id,
+      status: updateData.value.status,
+      startTime: updateData.value.appointmentDate ? new Date(updateData.value.appointmentDate).toISOString() : undefined,
+      note: updateData.value.note
     }
+
+    const { data, error: updateError } = await supabaseAdmin
+      .from('Appointment')
+      .update({
+        status: appointmentData.status,
+        startTime: appointmentData.startTime,
+        note: appointmentData.note,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', appointmentData.id)
     
-    // ใช้ requestAppointment เพื่ออัปเดตข้อมูล
-    await advisorStore.requestAppointment(appointmentData)
-    
-    // รีเซ็ตฟอร์มและปิด modal
-    resetForm()
-    showEditModal.value = false
-    
-    // โหลดข้อมูลใหม่
+    if (updateError) {
+      throw new Error(`ไม่สามารถอัปเดตการนัดหมายได้: ${updateError.message}`)
+    }
+
+    isUpdateModalOpen.value = false
+
     await loadAppointments()
   } catch (err: any) {
     error.value = err.message
@@ -544,7 +444,6 @@ const updateAppointment = async () => {
   }
 }
 
-// รีเซ็ตฟอร์ม
 const resetForm = () => {
   formData.value = {
     id: '',
@@ -560,7 +459,16 @@ const resetForm = () => {
   selectedAppointment.value = null
 }
 
-// จัดรูปแบบวันที่
+const openUpdateModal = (appointment: Appointment) => {
+  isUpdateModalOpen.value = true
+  updateData.value = {
+    id: appointment.id,
+    status: appointment.status,
+    appointmentDate: appointment.startTime ? new Date(appointment.startTime).toISOString().replace('Z', '') : '',
+    note: appointment.note || ''
+  }
+}
+
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return 'ไม่ระบุ'
   
@@ -574,32 +482,45 @@ const formatDate = (date: Date | string | null | undefined) => {
   }).format(dateObj)
 }
 
-// จัดรูปแบบวันที่และเวลา
-const formatDateTime = (date: Date | string | null | undefined) => {
+const formatDateTimeRange = (date: Date | string | null | undefined, status: string) => {
   if (!date) return 'ไม่ระบุ'
   
   const dateObj = typeof date === 'string' ? new Date(date) : date
-  
-  return new Intl.DateTimeFormat('th-TH', {
+
+  const thaiTime = new Date(dateObj.getTime() + 7 * 60 * 60 * 1000)
+
+  const dateFormatter = new Intl.DateTimeFormat('th-TH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    calendar: 'buddhist'
+  })
+
+  const timeFormatter = new Intl.DateTimeFormat('th-TH', {
     hour: '2-digit',
-    minute: '2-digit',
-    calendar: 'buddhist',
-    timeZone: 'Asia/Bangkok'
-  }).format(dateObj)
+    minute: '2-digit'
+  })
+  
+  const formattedDate = dateFormatter.format(thaiTime)
+  const formattedStartTime = timeFormatter.format(thaiTime)
+
+  if (status === 'pending') {
+    const endTime = new Date(thaiTime.getTime() + 3 * 60 * 60 * 1000)
+    const formattedEndTime = timeFormatter.format(endTime)
+    return `${formattedDate} เวลา ${formattedStartTime} - ${formattedEndTime} น.`
+  } else {
+    return `${formattedDate} เวลา ${formattedStartTime} น.`
+  }
 }
 
-// แปลงสถานะเป็นข้อความภาษาไทย
 const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
       return 'รอดำเนินการ'
     case 'scheduled':
-      return 'กำหนดการแล้ว'
+      return 'อาจารย์ยืนยันกำหนดการ'
     case 'confirmed':
-      return 'นักศึกษายืนยันแล้ว'
+      return 'ยืนยัน'
     case 'cancelled':
       return 'ยกเลิกแล้ว'
     default:
@@ -607,7 +528,6 @@ const getStatusText = (status: string) => {
   }
 }
 
-// แปลงช่วงเวลาเป็นข้อความภาษาไทย
 const getPreferredTimeText = (time?: string | null) => {
   if (!time) return ''
   

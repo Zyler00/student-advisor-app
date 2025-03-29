@@ -22,8 +22,7 @@
         </div>
       </div>
     </div>
-    
-    <!-- รายการนักศึกษา -->
+
     <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -102,8 +101,7 @@
         </table>
       </div>
     </div>
-    
-    <!-- Modal กำหนดอาจารย์ที่ปรึกษา -->
+
     <div v-if="showAssignModal" class="fixed inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showAssignModal = false"></div>
@@ -185,7 +183,6 @@ const formLoading = ref(false)
 const selectedStudent = ref<User | null>(null)
 const selectedAdvisorId = ref('')
 
-// ตัวแปรสำหรับการแคช
 const advisorMap = ref<Map<string, User>>(new Map())
 const studentAdvisorMap = ref<Map<string, string>>(new Map())
 
@@ -209,8 +206,6 @@ const fetchAdvisors = async () => {
   try {
     const data = await advisorStore.fetchAdvisors()
     advisors.value = data as User[]
-    
-    // สร้าง map ของอาจารย์
     advisorMap.value = new Map()
     advisors.value.forEach(advisor => {
       advisorMap.value.set(advisor.id, advisor)
@@ -222,7 +217,6 @@ const fetchAdvisors = async () => {
 
 const fetchRelations = async () => {
   try {
-    // ดึงข้อมูลนักศึกษาที่มีอาจารย์ที่ปรึกษาแล้ว
     const { data, error: err } = await supabase
       .from('User')
       .select('id, advisorId')
@@ -232,8 +226,7 @@ const fetchRelations = async () => {
     if (err) {
       throw new Error('ไม่สามารถดึงข้อมูลความสัมพันธ์ได้: ' + err.message)
     }
-    
-    // สร้าง map ของความสัมพันธ์ระหว่างนักศึกษาและอาจารย์
+
     studentAdvisorMap.value = new Map()
     data.forEach((student: { id: string, advisorId: string }) => {
       if (student.advisorId) {
@@ -286,16 +279,13 @@ const handleAssignAdvisor = async () => {
     error.value = null
     
     await advisorStore.assignAdvisorToStudent(selectedAdvisorId.value, selectedStudent.value.id)
-    
-    // อัปเดต map ของความสัมพันธ์
+
     studentAdvisorMap.value.set(selectedStudent.value.id, selectedAdvisorId.value)
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     showAssignModal.value = false
     selectedStudent.value = null
     selectedAdvisorId.value = ''
-    
-    // โหลดข้อมูลความสัมพันธ์ใหม่
+
     await fetchRelations()
   } catch (err: any) {
     error.value = err.message

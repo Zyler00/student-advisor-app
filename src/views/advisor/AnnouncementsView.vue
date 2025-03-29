@@ -81,8 +81,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal สร้างประกาศใหม่ -->
     <div v-if="showCreateModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showCreateModal = false"></div>
@@ -153,8 +151,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal แก้ไขประกาศ -->
     <div v-if="showEditModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showEditModal = false"></div>
@@ -242,8 +238,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal ยืนยันการลบ -->
     <div v-if="showDeleteModal" class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showDeleteModal = false"></div>
@@ -303,12 +297,10 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const formLoading = ref(false)
 
-// Modals
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 
-// Form data
 const formData = ref({
   id: '',
   title: '',
@@ -318,10 +310,8 @@ const formData = ref({
   fileName: ''
 })
 
-// Selected announcement for edit/delete
 const selectedAnnouncement = ref<Announcement | null>(null)
 
-// ดึงข้อมูลประกาศเมื่อโหลดหน้า
 onMounted(async () => {
   try {
     await advisorStore.fetchAnnouncements()
@@ -333,7 +323,6 @@ onMounted(async () => {
   }
 })
 
-// จัดการการอัปโหลดไฟล์
 const handleFileUpload = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
@@ -342,7 +331,6 @@ const handleFileUpload = (event: Event) => {
   }
 }
 
-// สร้างประกาศใหม่
 const createAnnouncement = async () => {
   try {
     formLoading.value = true
@@ -352,12 +340,10 @@ const createAnnouncement = async () => {
       title: formData.value.title,
       description: formData.value.description
     }, formData.value.file)
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     resetForm()
     showCreateModal.value = false
-    
-    // อัปเดตรายการประกาศ
+
     announcements.value = advisorStore.announcements
   } catch (err: any) {
     error.value = err.message
@@ -366,7 +352,6 @@ const createAnnouncement = async () => {
   }
 }
 
-// แก้ไขประกาศ
 const editAnnouncement = (announcement: Announcement) => {
   selectedAnnouncement.value = announcement
   formData.value = {
@@ -380,7 +365,6 @@ const editAnnouncement = (announcement: Announcement) => {
   showEditModal.value = true
 }
 
-// อัปเดตประกาศ
 const updateAnnouncement = async () => {
   try {
     formLoading.value = true
@@ -395,12 +379,10 @@ const updateAnnouncement = async () => {
       },
       formData.value.file
     )
-    
-    // รีเซ็ตฟอร์มและปิด modal
+
     resetForm()
     showEditModal.value = false
-    
-    // ดึงข้อมูลประกาศใหม่หลังจากอัปเดต
+
     await advisorStore.fetchAnnouncements()
     announcements.value = advisorStore.announcements
   } catch (err: any) {
@@ -410,13 +392,11 @@ const updateAnnouncement = async () => {
   }
 }
 
-// ยืนยันการลบประกาศ
 const confirmDelete = (announcement: Announcement) => {
   selectedAnnouncement.value = announcement
   showDeleteModal.value = true
 }
 
-// ลบประกาศ
 const deleteAnnouncement = async () => {
   if (!selectedAnnouncement.value) return
   
@@ -425,11 +405,9 @@ const deleteAnnouncement = async () => {
     error.value = null
     
     await advisorStore.deleteAnnouncement(selectedAnnouncement.value.id)
-    
-    // ปิด modal
+
     showDeleteModal.value = false
-    
-    // อัปเดตรายการประกาศ
+
     announcements.value = advisorStore.announcements
   } catch (err: any) {
     error.value = err.message
@@ -438,12 +416,10 @@ const deleteAnnouncement = async () => {
   }
 }
 
-// ลบไฟล์แนบ
 const removeFile = () => {
   formData.value.fileUrl = ''
 }
 
-// รีเซ็ตฟอร์ม
 const resetForm = () => {
   formData.value = {
     id: '',
@@ -456,7 +432,6 @@ const resetForm = () => {
   selectedAnnouncement.value = null
 }
 
-// จัดรูปแบบวันที่
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   return new Intl.DateTimeFormat('th-TH', {
@@ -468,7 +443,6 @@ const formatDate = (dateString: string) => {
   }).format(date)
 }
 
-// เปิด URL ในแท็บใหม่
 const openUrl = (url: string) => {
   window.open(url, '_blank')
 }
