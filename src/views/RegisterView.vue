@@ -61,11 +61,15 @@
               class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
             >
               <option value="" disabled selected>เลือกภาควิชา</option>
-              <option value="วิศวกรรมคอมพิวเตอร์">วิศวกรรมคอมพิวเตอร์</option>
-              <option value="วิศวกรรมไฟฟ้า">วิศวกรรมไฟฟ้า</option>
-              <option value="วิศวกรรมเครื่องกล">วิศวกรรมเครื่องกล</option>
-              <option value="วิศวกรรมโยธา">วิศวกรรมโยธา</option>
-              <option value="วิศวกรรมอุตสาหการ">วิศวกรรมอุตสาหการ</option>
+              <option value="วิศวกรรมซอฟแวร์ ป.โท">วิศวกรรมซอฟแวร์ ป.โท</option>
+              <option value="การจัดการควาามรู้และนวัฒกรรม ป.โท">การจัดการควาามรู้และนวัฒกรรม ป.โท</option>
+              <option value="การจัดการเทคโนโลยีดิจิทัล ป.โท">การจัดการเทคโนโลยีดิจิทัล ป.โท</option>
+              <option value="การจัดการควาามรู้และนวัฒกรรม ป.เอก">การจัดการควาามรู้และนวัฒกรรม ป.เอก</option>
+              <option value="วิศวกรรมซอฟแวร์ ป.ตรี">วิศวกรรมซอฟแวร์ ป.ตรี</option>
+              <option value="การจัดการสมัยใหม่และเทคโนโลยีสารสนเทศ ป.ตรี">การจัดการสมัยใหม่และเทคโนโลยีสารสนเทศ ป.ตรี</option>
+              <option value="แอนนิเมชันและวิชวลเอฟเฟกต์ ป.ตรี">แอนนิเมชันและวิชวลเอฟเฟกต์ ป.ตรี</option>
+              <option value="ดิจิทัลเกม ป.ตรี">ดิจิทัลเกม ป.ตรี</option>
+              <option value="บูรณาการอุตสาหกรรมดิจิตัล ป.ตรี">บูรณาการอุตสาหกรรมดิจิตัล ป.ตรี</option>
             </select>
           </div>
           
